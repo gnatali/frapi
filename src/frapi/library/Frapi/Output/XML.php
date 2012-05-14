@@ -12,9 +12,7 @@
  * obtain it through the world-wide-web, please send an email
  * to license@getfrapi.com so we can send you a copy immediately.
  *
- * @author  David Doran <david.doran@echolibre.com>
  * @license   New BSD
- * @copyright echolibre ltd.
  * @package   frapi
  */
 class Frapi_Output_XML_Exception extends Frapi_Output_Exception {}
@@ -36,6 +34,15 @@ class Frapi_Output_XML extends Frapi_Output implements Frapi_Output_Interface
      * @var string
      */
     private $_typeHinting = false;
+
+    /**
+     * Numeric Key
+     *
+     * Whether to use <numeric-key>.
+     *
+     * @var boolean
+     */
+    private $_numericKey = false;
 
     /**
      * XML Mime Type
@@ -70,13 +77,17 @@ class Frapi_Output_XML extends Frapi_Output implements Frapi_Output_Interface
 
         $xml = '';
 
+        if (!is_array($data)) {
+            $data = $this->_normalizeToArray($data);
+        }
+
+
         $print = hash('md5', json_encode(
             $data + array('__action__name' => $this->action)
         ));
 
         if ($response = Frapi_Internal::getCached($print)) {
             $this->response = json_decode($response);
-
         } elseif (file_exists($file)) {
             ob_start();
             echo '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;
@@ -130,6 +141,18 @@ class Frapi_Output_XML extends Frapi_Output implements Frapi_Output_Interface
         if ($set_typeHinting_on) {
             $this->_typeHinting = true;
         }
+    }
+
+	/**
+     * Set Numeric Key use on/off.
+     *
+     * @param Boolean $numericKey Whether to turn numeric key on or off.
+     *
+     * @return void
+     */
+    public function setNumericKey($numericKey)
+    {
+        $this->_numericKey = (boolean) $numericKey;
     }
 
     /**
@@ -206,6 +229,17 @@ class Frapi_Output_XML extends Frapi_Output implements Frapi_Output_Interface
                 }
             }
         } else {
+            $cache = new Frapi_Internal();
+            $cache = $cache->getCachedDbConfig();
+            $useCdata = $cache['use_cdata'];
+
+            if ((bool)$useCdata === true) {
+                if (!is_numeric($variable)) {
+                    $writer->writeCData($variable);
+                    return;
+                }
+            }
+
             $writer->text($variable);
         }
     }
@@ -223,6 +257,7 @@ class Frapi_Output_XML extends Frapi_Output implements Frapi_Output_Interface
      */
     private function _generateKeyValueXML($writer, $key, $value)
     {
+    	$doEnd = true;
         //If key is numeric and value is string, make empty element: <VALUESTRING />
         if ((is_numeric($key) || is_null($key))
             && is_string($value)
@@ -236,8 +271,10 @@ class Frapi_Output_XML extends Frapi_Output implements Frapi_Output_Interface
          * Algo for handling keys and values:
          * 1. If key is not a normal (valid XML) element name write <numeric-key>
          *    1.1 If key is null then parent array was numeric. (self-indexing)
-         * 2. Else, if key is valid XML element name open it.
-         *    2.1 IF value is null, then create empty element.
+         * 2. Else, create container
+         * 	  2.1 If value is non assoc array, non empty. Add each element with the same key.
+         *    2.2 Else open XML element name using key
+         *    2.3 Else IF value is null, then create empty element.
          *
          */
         if (is_numeric($key) or is_null($key)) {
@@ -248,18 +285,38 @@ class Frapi_Output_XML extends Frapi_Output implements Frapi_Output_Interface
 
             $this->_generateItemXML($writer, $value);
         } else {
-            try {
-                $writer->startElement($key);
-            } catch (Exception $e) {
-                throw new Frapi_Output_XML_Exception('Invalid XML element name, cannot create element.', 'Frapi_Output_XML_Exception');
-            }
+        	if (!$this->_numericKey && is_array($value) && count($value) > 0 && !$this->_arrayIsAssoc($value)) {
+        		foreach($value as $v) {
+	        		try {
+		                $writer->startElement($key);
+		            } catch (Exception $e) {
+		                throw new Frapi_Output_XML_Exception(
+                            'Invalid XML element name, cannot create element.',
+                            'Frapi_Output_XML_Exception'
+                        );
+		            }
+        			$this->_generateItemXML($writer, $v);
+        			$writer->endElement();
+        		}
+        		$doEnd = false;
+        	} else {
+	            try {
+	                $writer->startElement($key);
+	            } catch (Exception $e) {
+	                throw new Frapi_Output_XML_Exception(
+                        'Invalid XML element name, cannot create element.',
+                        'Frapi_Output_XML_Exception'
+                    );
+	            }
 
-            if (!is_null($value)) {
-                $this->_generateItemXML($writer, $value);
-            }
+	            if (!is_null($value)) {
+	                $this->_generateItemXML($writer, $value);
+	            }
+        	}
         }
-
-        $writer->endElement();
+		if ($doEnd) {
+        	$writer->endElement();
+		}
     }
 
     /**
@@ -275,12 +332,40 @@ class Frapi_Output_XML extends Frapi_Output implements Frapi_Output_Interface
      */
     private function _arrayIsAssoc($array)
     {
-        foreach ($array as $k => $v) {
-            if (!is_int($k)) {
-                return true;
+        return !ctype_digit( implode('', array_keys($array) ) );
+    }
+
+    /**
+     * Normalize a container to array
+     *
+     * Some data coming back from the database can sometimes be oddly
+     * formatted or even users might pass an object to the $this->data
+     * container in their Action file. We just need to make sure we make
+     * array out of it and do not fall and break when an object is passed.
+     *
+     * @param  mixed $input Either an array or an object
+     * @return array An associative array representation of the variable that was passed
+     *               and if the data isn't an array or an object, nothing is touched.
+     */
+    private function _normalizeToArray($input)
+    {
+        $output = $input;
+
+        if(is_object($input) || is_array($input)) {
+            $output = array();
+            foreach($input AS $key => $value) {
+                $output[$key] = $value;
+                if(is_object($value) || is_array($value)) {
+                    $output[$key] = $this->_normalizeToArray($value);
+                }
             }
         }
 
-        return false;
+		if (!is_array($output)) {
+			return array();
+		}
+
+        return $output;
     }
 }
+

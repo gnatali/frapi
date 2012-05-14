@@ -24,7 +24,7 @@ if ($pos !== false && $pos === $lpos) {
     <?php if ($this->menuItem != '/action/code') : ?>
 	<div class="sidenav">
 		<h2><?php echo $this->tr->_('SUBMENU'); ?></h2>
-    <?php if (in_array($item, array('/configuration', '/database', '/cache', '/output'))) { ?>
+    <?php if (in_array($item, array('/configuration', '/database', '/cache', '/output', '/user'))) { ?>
         <li<?php echo $item == '/cache' ? ' class="active"' : '' ?>><a href="/cache"><?php echo $this->tr->_('CACHE'); ?></a></li>
       <li<?php echo $item == '/user' ? ' class="active"' : '' ?>><a href="/user"><?php echo $this->tr->_('USERS'); ?></a></li>
       <li<?php echo $item == '/output' ? ' class="active"' : '' ?>><a href="/output"><?php echo $this->tr->_('OUTPUT'); ?></a></li>
@@ -37,6 +37,13 @@ if ($pos !== false && $pos === $lpos) {
         <li<?php echo $item == '/errors/add' ? ' class="active"' : '' ?>><a href="/errors/add"><?php echo $this->tr->_('ADD_NEW_ERROR'); ?></a></li>
     <?php } elseif ($item == '/action') { ?>
         <li<?php echo $item == '/action/add' ? ' class="active"' : '' ?>><a href="/action/add"><?php echo $this->tr->_('ADD_NEW_ACTION'); ?></a></li>
+    <?php } elseif ($item == '/mimetypes') { ?>
+        <?php
+        /**
+         * @todo Localize
+         */
+        ?>
+        <li<?php echo $item == '/mimetypes/add' ? ' class="active"' : '' ?>><a href="/mimetypes/add"><?php echo $this->tr->_('ADD_NEW_MIMETYPE'); ?></a></li>
     <?php } ?>
 	</div>
     <?php endif; ?>

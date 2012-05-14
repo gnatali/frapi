@@ -351,6 +351,9 @@ msgstr "La classe HttpRequest class est introuvable &#8212; le <a href=\"http://
 msgid "TESTER_API_INFO_MESSAGE"
 msgstr "N'oubliez pas, vous pouvez définir par défaut le nom de domaine de l'API dans <a href=\"/configuration\">configuration</a>!"
 
+msgid "HISTORY_ERROR"
+msgstr "Error fetching your history"
+
 # Other
 
 msgid "ADDED"
@@ -476,3 +479,33 @@ msgstr "Error synchronizing actions."
 
 msgid "ROUTE"
 msgstr "Route"
+
+msgid "ADDED_ERROR"
+msgstr "Successfully added error"
+
+msgid "ERROR_ADDING_ERROR"
+msgstr "Error adding action"
+
+msgid "COULD_NOT_DELETE_ERROR"
+msgstr "Could not delete error"
+
+msgid "SUCCESS_DELETE_ERROR"
+msgstr "Successfully deleted error"
+
+msgid "ERROR_DELETING_ERROR"
+msgstr "Error deleting errror"
+
+msgid "COULD_NOT_DELETE PARTNER"
+msgstr "Could not delete partner"
+
+msgid "SUCCESS_DELETE_PARTNER"
+msgstr "Successfully deleted partner"
+
+msgid "ERROR_DELETING_PARTNER"
+msgstr "Error deleting partner"
+
+msgid "USE_CDATA"
+msgstr "Always use CDATA"
+
+msgid "ALLOW_CROSSDOMAIN"
+msgstr "Allow cross domain requests"

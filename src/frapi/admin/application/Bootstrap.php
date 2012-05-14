@@ -1,7 +1,6 @@
 <?php
 /**
- * @author Echolibre ltd. 2009 <freedom@echolibre.com>
- * @copyright Echolibre ltd. 2009
+ * @author See AUTHORS file.
  */
 class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 {
@@ -29,12 +28,10 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
         $translate->addTranslation($languageDir . DIRECTORY_SEPARATOR . 'ru_RU.mo', 'ru');
 
         $locale = new Zend_Session_Namespace('locale');
-        if ($locale->value === null) {
-
+        if (!$locale->value) {
             $config_model  = new Default_Model_Configuration();
             $locale_config = $config_model->getKey('locale');
-
-            isset($locale_config) ? $locale->value = $locale_config : $locale->value = 'en';
+            $locale->value = $locale_config ? $locale_config : 'en';
         }
 
         $translate->setLocale($locale->value);
@@ -48,7 +45,7 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
     {
         Zend_Registry::set('config', new Zend_Config($this->getOptions()));
 
-        $localConfigPath = ROOT_PATH . DIRECTORY_SEPARATOR . 'custom' .
+        $localConfigPath = CUSTOM_PATH .
                           DIRECTORY_SEPARATOR . 'Config' . DIRECTORY_SEPARATOR;
 
         Zend_Registry::set('localConfigPath', $localConfigPath);
@@ -121,5 +118,11 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
     {
         $this->bootstrap('Config');
         Zend_Registry::set('db', $this->getPluginResource('db')->getDbAdapter());
+    }
+
+    protected function _initApiUrl()
+    {
+        $int = Frapi_Internal::getCachedDbConfig();
+        Frapi_Internal::$_hash = isset($int['api_url']) ? hash('sha1', $int['api_url']) : false;
     }
 }

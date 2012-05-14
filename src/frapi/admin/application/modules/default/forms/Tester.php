@@ -11,7 +11,6 @@
  * to license@getfrapi.com so we can send you a copy immediately.
  *
  * @license   New BSD
- * @copyright echolibre ltd.
  * @package   frapi-admin
  */
 class Default_Form_Tester extends Lupin_Form
@@ -32,7 +31,7 @@ class Default_Form_Tester extends Lupin_Form
         $history      = $test_history->value;
 
         if ($history) {
-            foreach ($history as $route) {
+            foreach ($history as $route => $data) {
                 if (!empty($route)) {
                     $routesAndActions['History'][$route] = $route;
                 }
@@ -79,7 +78,7 @@ class Default_Form_Tester extends Lupin_Form
             'delete' => 'DELETE',
             'head'   => 'HEAD'
         );
-        
+
         // Explicitly turn off translations, our DELETE got translated
         $method = new Zend_Form_Element_Select('method', array('disableTranslator' => true));
         $method->setLabel($tr->_('METHOD'));

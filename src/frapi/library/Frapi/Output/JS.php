@@ -23,7 +23,6 @@
  * using $response from the parent object.
  *
  * @license   New BSD
- * @copyright echolibre ltd.
  * @package   frapi
  */
 class Frapi_Output_JS extends Frapi_Output implements Frapi_Output_Interface
@@ -35,14 +34,14 @@ class Frapi_Output_JS extends Frapi_Output implements Frapi_Output_Interface
      * @var $jsonpCallback The json function to write.
      */
     private $jsonpCallback = false;
-    
+
     /**
      * Text Mime Type
      *
      * @var string
      */
     public $mimeType = 'text/javascript';
-    
+
     /**
      * Populate the Output
      *
@@ -62,7 +61,7 @@ class Frapi_Output_JS extends Frapi_Output implements Frapi_Output_Interface
             $this->jsonpCallback = $response['jsonp_callback'];
             unset($response['jsonp_callback']);
         }
-        
+
         $this->response = $response;
         return $this;
     }
@@ -80,15 +79,15 @@ class Frapi_Output_JS extends Frapi_Output implements Frapi_Output_Interface
     public function executeOutput()
     {
         $returnedData = json_encode($this->response);
-        
+
         if ($this->jsonpCallback !== false) {
             return $this->jsonpCallback . '('.$returnedData.');';
         }
-        
+
         /**
          * This has to look like:
          *
-         * (function() { 
+         * (function() {
          *     return jsonobject;
          * });
          */

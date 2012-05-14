@@ -1,5 +1,8 @@
 domain "en_GB"
 
+msgid "HOSTNAME"
+msgstr "Hostname"
+
 # login page
 msgid "USERNAME"
 msgstr "Username"
@@ -25,6 +28,9 @@ msgstr "Dashboard"
 
 msgid "ACTIONS"
 msgstr "Actions"
+
+msgid "MIMETYPES"
+msgstr "Mimetypes"
 
 msgid "ERRORS"
 msgstr "Errors" 
@@ -139,6 +145,28 @@ msgstr "Development environment has been synchronized"
 
 msgid "ACTION_CONFIRM_DELETE"
 msgstr "Are you sure you want to delete this action?"
+
+# Mimetype section
+msgid "ADD_NEW_MIMETYPE"
+msgstr "Add new Mimetype"
+
+msgid "MIMETYPE_ADD_SUCCESS"
+msgstr "Mimetype (%s) added"
+
+msgid "MIMETYPE_UPDATE_SUCCESS"
+msgstr "Mimetype (%s) updated"
+
+msgid "MIMETYPE_DELETE"
+msgstr "Mimetype removed"
+
+msgid "MIMETYPE"
+msgstr "Mimetype"
+
+msgid "OUTPUT_FORMAT"
+msgstr "Output Format"
+
+msgid "MIMETYPE_CONFIRM_DELETE"
+msgstr "Are you sure you want to delete this mimetype?"
 
 # Error section
 msgid "ADD_NEW_ERROR"
@@ -397,6 +425,9 @@ msgstr "HttpRequest class was not found &#8212; the <a href=\"http://pecl.php.ne
 msgid "TESTER_API_INFO_MESSAGE"
 msgstr "Remember, you can set the default API domain name in <a href=\"/configuration\">configuration</a>!"
 
+msgid "HISTORY_ERROR"
+msgstr "Error fetching your history"
+
 # Other
 msgid "ADDED"
 msgstr "added"
@@ -500,7 +531,7 @@ msgid "CLI_REQUIRED_PARAMETERS"
 msgstr "List of comma-seperated required parameters."
 
 msgid "ADDED_ACTION"
-msgstr "Successfully added action:"
+msgstr "Successfully added action"
 
 msgid "ERROR_ADDING_ACTION"
 msgstr "Error adding action"
@@ -522,3 +553,39 @@ msgstr "Error synchronizing actions."
 
 msgid "ROUTE"
 msgstr "Route"
+
+msgid "ADDED_ERROR"
+msgstr "Successfully added error"
+
+msgid "ERROR_ADDING_ERROR"
+msgstr "Error adding action"
+
+msgid "COULD_NOT_DELETE_ERROR"
+msgstr "Could not delete error"
+
+msgid "SUCCESS_DELETE_ERROR"
+msgstr "Successfully deleted error"
+
+msgid "ERROR_DELETING_ERROR"
+msgstr "Error deleting errror"
+
+msgid "COULD_NOT_DELETE PARTNER"
+msgstr "Could not delete partner"
+
+msgid "SUCCESS_DELETE_PARTNER"
+msgstr "Successfully deleted partner"
+
+msgid "ERROR_DELETING_PARTNER"
+msgstr "Error deleting partner"
+
+msgid "USE_CDATA"
+msgstr "Always use CDATA"
+
+msgid "ALLOW_CROSSDOMAIN"
+msgstr "Allow cross domain requests"
+
+msgid "DATABASE_TYPE"
+msgstr "Database Engine"
+
+msgid "DATABASE_ENGINE"
+msgstr "DB Engine"

@@ -77,13 +77,15 @@ class Default_Model_Action extends Lupin_Model
 
         $segments = Frapi_Router::parseSegments($data['route']);
         foreach ($segments as $key => $value) {
-            if ($key == 0) {
-                if (!preg_match('/^[a-z0-9\-\_\*]+$/', $value)) {
-                    throw new RuntimeException('Action route does not validate. Please ensure each part contains only alpha-numeric characters, underscores, dashes and colons.');
-                }
-            } else {
-                if (!preg_match('/^:?[a-z0-9\-\_\*]+$/', $value)) {
-                    throw new RuntimeException('Action route does not validate. Please ensure each part contains only alpha-numeric characters, underscores, dashes and colons.');
+            if (!empty($value)) {
+                if ($key == 0) {
+                    if (!preg_match('/^[a-z0-9\-\_\*]+$/', $value)) {
+                        throw new RuntimeException('Action route does not validate. Please ensure each part contains only alpha-numeric characters, underscores, dashes and colons.');
+                    }
+                } else {
+                    if (!preg_match('/^:?[a-z0-9\-\_\*]+$/', $value)) {
+                        throw new RuntimeException('Action route does not validate. Please ensure each part contains only alpha-numeric characters, underscores, dashes and colons.');
+                    }
                 }
             }
         }
@@ -182,13 +184,15 @@ class Default_Model_Action extends Lupin_Model
 
         $segments = Frapi_Router::parseSegments($data['route']);
         foreach ($segments as $key => $value) {
-            if ($key == 0) {
-                if (!preg_match('/^[a-z0-9\-\_\*]+$/', $value)) {
-                    throw new RuntimeException('Action route does not validate. Please ensure each part contains only alpha-numeric characters, underscores, dashes and colons.');
-                }
-            } else {
-                if (!preg_match('/^:?[a-z0-9\-\_\*]+$/', $value)) {
-                    throw new RuntimeException('Action route does not validate. Please ensure each part contains only alpha-numeric characters, underscores, dashes and colons.');
+            if (!empty($value)) {
+                if ($key == 0) {
+                    if (!preg_match('/^[a-z0-9\-\_\*]+$/', $value)) {
+                        throw new RuntimeException('Action route does not validate. Please ensure each part contains only alpha-numeric characters, underscores, dashes and colons.');
+                    }
+                } else {
+                    if (!preg_match('/^:?[a-z0-9\-\_\*]+$/', $value)) {
+                        throw new RuntimeException('Action route does not validate. Please ensure each part contains only alpha-numeric characters, underscores, dashes and colons.');
+                    }
                 }
             }
         }
@@ -338,7 +342,7 @@ class Default_Model_Action extends Lupin_Model
             }
 
             $name = ucfirst(strtolower($a['name']));
-            $dir  = ROOT_PATH . DIRECTORY_SEPARATOR . 'custom' . DIRECTORY_SEPARATOR . 'Action';
+            $dir  = CUSTOM_PATH . DIRECTORY_SEPARATOR . 'Action';
 
             $file = $dir . DIRECTORY_SEPARATOR . $name . '.php';
 
@@ -390,7 +394,7 @@ class Default_Model_Action extends Lupin_Model
             );
 
             $default = $class->getProperty('requiredParams');
-            if ($default->getDefaultValue()->getValue() != $properties) {
+            if (is_object($default) && ($default->getDefaultValue()->getValue() != $properties)) {
                 $default->setSourceDirty(true);
                 $class->setProperty($default->setDefaultValue($properties));
             }

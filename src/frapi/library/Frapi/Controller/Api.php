@@ -21,7 +21,6 @@
  * and it is much cleaner now.
  *
  * @license   New BSD
- * @copyright echolibre ltd.
  * @package   frapi
  */
 class Frapi_Controller_Api extends Frapi_Controller_Main
@@ -31,30 +30,11 @@ class Frapi_Controller_Api extends Frapi_Controller_Main
      * the default output format is simply xml
      */
     const DEFAULT_OUTPUT_FORMAT = 'xml';
-    
-    /** 
-     * A map of all the mimetypes to their output
-     * format. In order to add a new mimetype, add it's
-     * mimetype name and then add it's output as the associated
-     * value.
-     * 
-     * @var array An array of mimetypes and their output types.
-     */
-    public $mimeMaps = array(
-        'application/xml'  => 'xml',
-        'text/xml'         => 'xml',
-        'application/json' => 'json',
-        'text/json'        => 'json',
-        'text/html'        => 'html',
-        'text/plain'       => 'json',
-        'text/javascript'  => 'js',
-        'text/php-printr'  => 'printr'
-    );
-    
+
     /**
      * This is the detected mimetypes and the options
      * associated with it.
-     * 
+     *
      * @var array An array of mimetype and associated format.
      */
     public $options;
@@ -68,11 +48,12 @@ class Frapi_Controller_Api extends Frapi_Controller_Main
      * @see $this->setFormat()
      * @see Error
      * @uses Error
+     * @param Frapi_Authorization $customAuthorization optional custom authorization
      */
-    public function __construct()
+    public function __construct($customAuthorization=null)
     {
+        parent::__construct($customAuthorization);
         $this->options = $this->detectAndSetMimeType();
-        parent::__construct();
     }
 
     /**
@@ -143,8 +124,8 @@ class Frapi_Controller_Api extends Frapi_Controller_Main
             $action = 'execute' . ucfirst(strtolower($method));
         }
 
-        $response = $this->actionContext->$action();
-        
+        $response = $this->actionContext->setAction($action)->$action();
+
         // Make sure we use a Frapi_Response.
         if (!$response instanceof Frapi_Response) {
             $response = new Frapi_Response(
@@ -153,7 +134,23 @@ class Frapi_Controller_Api extends Frapi_Controller_Main
                 )
             );
         }
-        
+
+
+        /**
+         * Here we look for the temporary params so we can
+         * automatically replace the jsonp_callback and handle
+         * it in the OutputHandlers transparently.
+         */
+        $tmpParams = $this->actionContext->getParams();
+        if (isset($tmpParams['jsonp_callback'])) {
+            $response->setData(
+                $response->getData() +
+                array('jsonp_callback' => $tmpParams['jsonp_callback'])
+            );
+        }
+
+        unset($tmpParams);
+
         /**
          * If the action result is NOT an instance of
          * Error, we can assume that it's valid
@@ -162,7 +159,7 @@ class Frapi_Controller_Api extends Frapi_Controller_Main
         return $this->getOutputInstance($this->getFormat())
                     ->setOutputAction($this->getAction())
                     ->populateOutput(
-                        $response->getData(), 
+                        $response->getData(),
                         $this->actionContext->getTemplateFileName())
                     ->sendHeaders($response)
                     ->executeOutput();
@@ -171,8 +168,8 @@ class Frapi_Controller_Api extends Frapi_Controller_Main
     /**
      * Process Frapi Errors
      *
-     * This method will process the FRAPI Errors, pass them to the 
-     * output handler, and format it correctly. 
+     * This method will process the FRAPI Errors, pass them to the
+     * output handler, and format it correctly.
      *
      * @param Frapi_Exception $e  The frapi exception to use
      * @return object The response object.
@@ -181,12 +178,12 @@ class Frapi_Controller_Api extends Frapi_Controller_Main
     {
         return Frapi_Controller_Api::processInternalError($e);
     }
-    
+
     /**
      * Statically Process Frapi Errors
      *
-     * This method will process the FRAPI Errors, pass them to the 
-     * output handler, and format it correctly. 
+     * This method will process the FRAPI Errors, pass them to the
+     * output handler, and format it correctly.
      *
      * This method is in fact a hack. Whenever we instantiate the controller
      * object from the source — index.php in this case — we can't try and
@@ -194,7 +191,7 @@ class Frapi_Controller_Api extends Frapi_Controller_Main
      * be thrown directly from within the constructor thus invalidating
      * and sending the self $controller object out of scope. Thence this hack
      * that instantiates it's own controller, ignores the exception thrown
-     * 
+     *
      * This also allows us to catch syntax errors before the constructor
      * is invoked and allows us to handle the errors gracefully.
      *
@@ -204,18 +201,27 @@ class Frapi_Controller_Api extends Frapi_Controller_Main
     public static function processInternalError(Frapi_Exception $e)
     {
         try {
-            $controller = new Frapi_Controller_API();
-        } catch (Exception $e) {
-            // This is a hack to intercept anything that may
-            // have happened before the internal error collection
-            // during the initialisation process.
-        }
+            $controller = new Frapi_Controller_Api();
 
-        return $controller->getOutputInstance($controller->getFormat())
+            return $controller->getOutputInstance($controller->getFormat())
                           ->setOutputAction('defaultError')
                           ->populateOutput($e->getErrorArray())
                           ->sendHeaders($e)
                           ->executeOutput();
+        } catch (Exception $e) {
+            // This is a hack to intercept anything that may
+            // have happened before the internal error collection
+            // during the initialisation process.
+            //
+            // If we got here, we have no controller and cannot properly handle
+            // output, so we just send a 500 and die.
+
+
+            header("HTTP/1.0 500 Internal Server Error");
+            exit;
+        }
+
+
     }
 
     /**
@@ -236,8 +242,12 @@ class Frapi_Controller_Api extends Frapi_Controller_Main
         // The state of the action context is now at a state where it can be used.
         $e = $this->getActionInstance($this->getAction())
                   ->setActionParams($this->getParams())
-                  ->setActionFiles($this->getFiles());
-                  
+                  ->setActionFiles($this->getFiles())
+                  ->setAcceptParams(
+                      isset($this->options) && is_array($this->options) 
+                      ? $this->options : array()
+                  );
+
         return $this;
     }
 
@@ -315,7 +325,7 @@ class Frapi_Controller_Api extends Frapi_Controller_Main
 
         return true;
     }
-    
+
     /**
      * Detect and set the mimetype
      *
@@ -329,22 +339,159 @@ class Frapi_Controller_Api extends Frapi_Controller_Main
      */
     public function detectAndSetMimeType()
     {
-        $type = false;
-        
-        if (!isset($_SERVER['CONTENT_TYPE']) && !isset($_SERVER['HTTP_ACCEPT'])) {
+        $types = $this->parseAcceptHeader();
+
+        if(empty($types)) {
             return false;
         }
-        
-        $type = isset($_SERVER['HTTP_ACCEPT']) ? $_SERVER['HTTP_ACCEPT'] : $_SERVER['CONTENT_TYPE'];
-        
-        if (!isset($this->mimeMaps[$type])) {
-            return false;
+
+        if ($this->formatSetByExtension) {
+            $this->setformat(strtolower($this->format));
+            return true;
         }
-        
-        $mimeType     = $type;
-        $outputFormat = strtoupper($this->mimeMaps[$type]);
-        
-        $this->setFormat(strtolower($outputFormat));
-        return array('mimeType' => $mimeType, 'outputFormat' => $outputFormat);
+
+        $mimetypes = $this->parseMimeTypes();
+
+        foreach($types as $type) {
+            if (isset($this->mimeMaps[$type['mimetype']])) {
+                $outputFormat = strtoupper($this->mimeMaps[$type['mimetype']]);
+
+                $this->setFormat(strtolower($outputFormat));
+
+                $return = $type['params'] + array(
+                    'mimeType'     => $type['mimetype'],
+                    'outputFormat' => $outputFormat
+                );
+
+                return $return;
+            } else {
+                foreach ($mimetypes as $mimetype) {
+                    $matches = array();
+                    if (preg_match($mimetype['pattern'], $type['mimetype'], $matches)) {
+                        $return = array(
+                            'mimeType' => $type['mimetype'],
+                        );
+
+                        if ($mimetype['output_format'][0] == ':') {
+                            $format = substr($mimetype['output_format'], 1);
+                            if (!empty($matches[$format])) {
+                                $return['outputFormat'] = $matches[$format];
+                            } else {
+                                $return['outputFormat'] = self::DEFAULT_OUTPUT_FORMAT;
+                            }
+                        } else {
+                            $return['outputFormat'] = $mimetype['output_format'];
+                        }
+
+                        foreach ($mimetype['params'] as $param) {
+                            $return[$param] = $matches[$param];
+                        }
+
+                        return $return;
+                    }
+                }
+            }
+        }
+
+        return array();
+    }
+
+    /**
+     * parse Accept header and sort Accept values by q priority
+     *
+     * @return array
+     */
+    protected function parseAcceptHeader()
+    {
+        if (!isset($_SERVER['HTTP_ACCEPT'])) {
+            return array();
+        }
+
+        $acceptLowPriority = $acceptHighPriority = array();
+
+        $types = explode(',', $_SERVER['HTTP_ACCEPT']);
+        foreach($types AS $type) {
+            $typeMatch = preg_match('/(?P<mimetype>[a-z\*]+\/[a-z\+\-\*]+)(?:(?:;)(?P<params>.*?$))?/i', $type, $typeComponents);
+            if(!$typeMatch) {
+                continue;
+            }
+
+            $params = array();
+            if (isset($typeComponents['params'])) {
+                $params = $this->parseAcceptHeaderParams($typeComponents['params']);
+            }
+
+            $priority = isset($params['q']) ? $params['q'] : 1;
+
+            $mimetype = array('mimetype' => $typeComponents['mimetype'], 'params' => $params);
+
+            if($priority === 1) {
+                $acceptHighPriority[] = $mimetype;
+            } else {
+                $acceptLowPriority[(10*$priority)] = $mimetype;
+            }
+        }
+        krsort($acceptLowPriority);
+        return array_merge($acceptHighPriority, $acceptLowPriority);
+    }
+
+    /**
+     * Parse accept headers params, e.g. charset=utf-8
+     *
+     * @param string $params
+     */
+    protected function parseAcceptHeaderParams($params)
+    {
+        $segments = explode(";", $params);
+
+        $params = array();
+        foreach ($segments as $segment) {
+            $param = array();
+            preg_match('/^(?P<name>.+?)=(?P<quoted>"|\')?(?P<value>.*?)(?:\k<quoted>)?$/', $segment, $param);
+
+            $params[$param['name']] = $param['value'];
+        }
+
+        return $params;
+    }
+
+    /**
+     * Parse mimetype for params
+     *
+     * @param string $mimetype
+     *
+     * @return array
+     */
+    protected function parseMimeTypes()
+    {
+        $cache = new Frapi_Internal();
+        $mimetypes = $cache->getConfiguration('mimetypes')->getAll('mimetype');
+
+        $patterns = array();
+
+        foreach($mimetypes as $mimetype) {
+            if (strpos($mimetype['mimetype'], ':') === false) {
+                continue;
+            }
+
+            $segments = preg_split("@/|\.|\+@", $mimetype['mimetype']);
+            $mimetype['mimetype'] = preg_quote($mimetype['mimetype']);
+
+            foreach ($segments as $segment) {
+                if ($segment[0] == ':') {
+                    $param = substr($segment, 1);
+                    $params[] = $param;
+                    $mimetype['mimetype'] = str_replace(preg_quote($segment), '(?P<' .preg_quote($param). '>.*?)', $mimetype['mimetype']);
+                }
+            }
+
+            // Don't add mimetypes that didn't have params
+            if (sizeof($params)) {
+                $patterns[] = $mimetype + array('pattern' => "@^{$mimetype['mimetype']}$@", 'params' => $params);
+            }
+        }
+
+        return $patterns;
     }
 }
+

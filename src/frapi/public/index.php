@@ -4,7 +4,11 @@ require dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . 'library/Frapi/AllFil
 set_error_handler(array('Frapi_Error', 'errorHandler'), E_ALL);
 
 try {
-    $controller = new Frapi_Controller_API();
+    if(!isset($customAuthorization)) {
+        $customAuthorization = null;
+    }
+
+    $controller = new Frapi_Controller_Api($customAuthorization);
 
     try {
         $controller->authorize();
@@ -23,4 +27,6 @@ try {
     // Whenever we get here, something went terribly wrong
     // in the core of FRAPI during initialisation phase.
     echo Frapi_Controller_Api::processInternalError($e);
+} catch (Exception $e) {
+    echo Frapi_Controller_Api::processInternalError(new Frapi_Error($e));
 }

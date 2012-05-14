@@ -11,7 +11,6 @@
  * to license@getfrapi.com so we can send you a copy immediately.
  *
  * @license   New BSD
- * @copyright echolibre ltd.
  * @package   frapi-admin
  */
 class Console_ErrorsController extends Zend_Controller_Action
@@ -27,6 +26,7 @@ class Console_ErrorsController extends Zend_Controller_Action
     public function init()
     {
         $this->tr = Zend_Registry::get('tr');
+        $this->view->tr = Zend_Registry::get('tr');
     }
 
     /*
@@ -60,10 +60,10 @@ class Console_ErrorsController extends Zend_Controller_Action
         // The options we allow for adding
         $options = new Zend_Console_Getopt(
             array (
-                'name|n=s' => 'Name of the error.',
-                'code|c-i' => 'HTTP code of error.',
-                'message|m=s' => 'Error message',
-                'description|d-s' => 'Description fo the error.'
+                'name|n=s'        => $this->tr->_('NAME'),
+                'code|c-i'        => $this->tr->_('HTTP_CODE'),
+                'message|m=s'     => $this->tr->_('ERROR_MESSAGE'),
+                'description|d-s' => $this->tr->_('DESCRIPTION'),
             )
         );
 
@@ -98,9 +98,9 @@ class Console_ErrorsController extends Zend_Controller_Action
 
         try {
             $model->add($submit_data);
-            $this->view->message = 'Successfully added error: ' . $error_name . PHP_EOL;
+            $this->view->message = $this->tr->_('ADDED_ERROR') . ': ' . $error_name . PHP_EOL;
         } catch (RuntimeException $e) {
-            $this->view->message = 'Error adding error: ' . $error_name . '. ' . $e->getMessage() . PHP_EOL;
+            $this->view->message = $this->tr->_('ERROR_ADDING_ERROR') . ': ' . $error_name . '. ' . $e->getMessage() . PHP_EOL;
         }
     }
 
@@ -118,7 +118,7 @@ class Console_ErrorsController extends Zend_Controller_Action
         // The options we are accepting for deleting
         $options = new Zend_Console_Getopt(
             array(
-                'name|n=s' => 'Name of the error.',
+                'name|n=s' => $this->tr->_('NAME'),
             )
         );
 
@@ -145,15 +145,15 @@ class Console_ErrorsController extends Zend_Controller_Action
         }
 
         if (!$error_id) {
-            $this->view->message = 'Could not delete error: ' . $error_name . '. Could not find match.' . PHP_EOL;
+            $this->view->message = $this->tr->_('COULD_NOT_DELETE_ERROR') . ': ' . $error_name . '. ' . $this->tr->_('COULD_NOT_FIND_MATCH') . '.' . PHP_EOL;
             return;
         }
 
         try {
             $model->delete($error_id);
-            $this->view->message = 'Successfully deleted error: ' . $error_name . PHP_EOL;
+            $this->view->message = $this->tr->_('SUCCESS_DELETE_ERROR') . ': ' . $error_name . PHP_EOL;
         } catch (RuntimeException $e) {
-            $this->view->message = 'Error deleting errror: ' . $error_name . '. ' . $e->getMessage() . PHP_EOL;
+            $this->view->message = $this->tr->_('ERROR_DELETING_ERROR') . ': ' . $error_name . '. ' . $e->getMessage() . PHP_EOL;
         }
     }
 }

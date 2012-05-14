@@ -19,7 +19,6 @@ class Frapi_Database_Exception extends Frapi_Exception {}
  *
  * @uses      Frapi_Database_Exception
  * @license   New BSD
- * @copyright echolibre ltd.
  * @package   frapi
  */
 class Frapi_Database extends PDO
@@ -30,7 +29,7 @@ class Frapi_Database extends PDO
      * @var PDO object
      */
     private static $instance = array();
-    
+
     /**
      * Singleton for database connections
      *
@@ -47,16 +46,70 @@ class Frapi_Database extends PDO
         if (!isset(self::$instance[$name])) {
             $configs = Frapi_Internal::getCachedDbConfig();
 
-            self::$instance[$name] = new PDO(
-                'mysql:dbname='.$configs['db_database'].';host='.$configs['db_hostname'], 
-                $configs['db_username'], 
-                $configs['db_password']
-            );
+            $dsn = self::buildDsn($configs);
+
+            // I iz not happy with this. We already have a switch
+            // for the dsn in the "buildDsn" method...
+            if (isset($configs['db_engine']) &&
+                in_array($configs['db_engine'], array('pgsql')))
+            {
+                // DSN that have the user/pass implicitely defined.
+                self::$instance[$name] = new PDO($dsn);
+            } else {
+                // Other dsns like mysql, mssql, etc.
+                self::$instance[$name] = new PDO(
+                    $dsn,
+                    $configs['db_username'],
+                    $configs['db_password']
+                );
+            }
         }
-        
+
         return self::$instance[$name];
     }
-    
+
+    /**
+     * Build a DataSource Name.
+     *
+     * This method is used by the factory method to build
+     * a datasource name for PDO based on the db_engine
+     * specified in the configuration (configurable via the admin)
+     *
+     * @throw  Frapi_Error
+     * @return string      The Datasource for the selected database engine.
+     */
+    public static function buildDsn(array $configs)
+    {
+        $dsn = false;
+
+        if (!isset($configs['db_engine'])) {
+            throw new Frapi_Error(
+                 'NO_DATABASE_DEFINED',
+                 'No Database is defined in the configuration',
+                 500
+            );
+        }
+
+        switch ($configs['db_engine']) {
+            case 'mysql':
+                $dsn = 'mysql:dbname=' . $configs['db_database'] .
+                       ';host='.$configs['db_hostname'];
+                break;
+            case 'pgsql':
+                $dsn = 'pgsql:host=' . $configs['db_hostname'] .
+                       ';dbname=' . $configs['db_database'] .
+                       ';user=' . $configs['db_username'] .
+                       ';password=' . $configs['db_password'];
+                break;
+            case 'mssql':
+                $dsn = 'sqlsrv:Server=' . $configs['db_hostname'] .
+                       ';Database=' . $configs['db_database'];
+                break;
+        }
+
+        return $dsn;
+    }
+
     /**
      * Get a database instance
      *
@@ -73,12 +126,12 @@ class Frapi_Database extends PDO
     {
         return self::factory($name);
     }
-    
+
     public static function getMasterInstance()
     {
         throw new Frapi_Database_Exception('Method not yet implemented');
     }
-    
+
     public static function getSlavesInstance()
     {
         throw new Frapi_Database_Exception('Method not yet implemented');

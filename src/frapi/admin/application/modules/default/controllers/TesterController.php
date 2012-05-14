@@ -11,7 +11,6 @@
  * to license@getfrapi.com so we can send you a copy immediately.
  *
  * @license   New BSD
- * @copyright echolibre ltd.
  * @package   frapi-admin
  */
 class TesterController extends Lupin_Controller_Base
@@ -21,7 +20,7 @@ class TesterController extends Lupin_Controller_Base
     public function init($styles = array())
     {
         $this->tr = Zend_Registry::get('tr');
-        $actions = array('index', 'ajax');
+        $actions = array('index', 'ajax', 'history');
         $this->_helper->_acl->allow('admin', $actions);
         parent::init($styles);
     }
@@ -34,10 +33,6 @@ class TesterController extends Lupin_Controller_Base
         $confModel   = new Default_Model_Configuration();
         if (!$confModel->getKey("api_url")) {
             $this->addInfoMessage($this->tr->_('TESTER_API_INFO_MESSAGE'));
-        }
-
-        if (!class_exists("HttpRequest")) {
-            $this->addErrorMessage($this->tr->_('TESTER_HTTP_REQUEST_MISSING'));
         }
 
         $this->view->form = $form;
@@ -59,9 +54,7 @@ class TesterController extends Lupin_Controller_Base
         $test_history      = new Zend_Session_Namespace('test_history');
         $history           = $test_history->value;
 
-        if (!in_array($session_query_uri, $history)) {
-            $history[] = $session_query_uri;
-        }
+        $history[$session_query_uri] = $this->getRequest()->getParams();
 
         $test_history->value = $history;
 
@@ -104,6 +97,10 @@ class TesterController extends Lupin_Controller_Base
         $request_url = 'http' . ($ssl == true ? 's' : '') . '://' . $url . '/' . $query_uri;
 
         $request = new HTTP_Request2($request_url, $newMethod);
+        $request->setConfig(array(
+            'ssl_verify_peer' => false,
+            'ssl_verify_host' => false,
+        ));
 
         if ($email && $pass) {
             $request->setAuth($email, $pass, HTTP_Request2::AUTH_DIGEST);
@@ -142,6 +139,21 @@ class TesterController extends Lupin_Controller_Base
         );
 
         $this->view->renderJson($response);
+    }
+
+    public function historyAction()
+    {
+        $this->view  = new Lupin_View();
+
+        $url = strtolower($this->_request->getParam('url'));
+
+        $test_history             = new Zend_Session_Namespace('test_history');
+        $history                  = $test_history->value;
+        $return_data              = $history[$url];
+        $return_data['format']    = substr($return_data['query_uri'], strrpos($return_data['query_uri'], '.') +1);
+        $return_data['query_uri'] = substr($return_data['query_uri'], 0, strrpos($return_data['query_uri'], '.'));
+
+        $this->view->renderJson($return_data);
     }
 
     protected function collapseHeaders($headers)

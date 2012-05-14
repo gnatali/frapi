@@ -13,14 +13,14 @@
  * to license@getfrapi.com so we can send you a copy immediately.
  *
  * @license   New BSD
- * @copyright echolibre ltd.
  * @package   frapi
  */
 if (!defined('ROOT_PATH')) {
     define('ROOT_PATH',         dirname(dirname(dirname(__FILE__))));
 }
 
-define('CUSTOM_PATH',       ROOT_PATH . DIRECTORY_SEPARATOR . 'custom');
+define('DEFAULT_CUSTOM_PATH', ROOT_PATH . DIRECTORY_SEPARATOR . 'custom');
+define('CUSTOM_PATH', (!isset($_SERVER['FRAPI_CUSTOM_PATH']) || !file_exists($_SERVER['FRAPI_CUSTOM_PATH'])) ? DEFAULT_CUSTOM_PATH : $_SERVER['FRAPI_CUSTOM_PATH']);
 define('LIBRARY_ROOT_PATH', ROOT_PATH . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'Frapi');
 define('EXTRA_LIBRARIES_ROOT_PATH', ROOT_PATH . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR);
 
@@ -43,9 +43,6 @@ define('CUSTOM_OUTPUT',   CUSTOM_PATH . DIRECTORY_SEPARATOR . 'Output');
 define('CUSTOM_MODEL',    CUSTOM_PATH . DIRECTORY_SEPARATOR . 'Model');
 define('CUSTOM_CONFIG',  CUSTOM_PATH . DIRECTORY_SEPARATOR . 'Config');
 define('ADMIN_CONF_PATH', CUSTOM_CONFIG . DIRECTORY_SEPARATOR);
-
-// Require the CUSTOM AllFiles
-require CUSTOM_PATH . DIRECTORY_SEPARATOR . 'AllFiles.php';
 
 define('API_MODELS',     ROOT_PATH . DIRECTORY_SEPARATOR . 'Models');
 
@@ -76,6 +73,7 @@ require LIBRARY_ROOT_PATH . DIRECTORY_SEPARATOR . 'Input' . DIRECTORY_SEPARATOR 
 
 // Response
 require LIBRARY_ROOT_PATH . DIRECTORY_SEPARATOR . 'Response.php';
+require LIBRARY_ROOT_PATH . DIRECTORY_SEPARATOR . 'Response' . DIRECTORY_SEPARATOR . 'Custom.php';
 
 //Database
 require LIBRARY_ROOT_PATH . DIRECTORY_SEPARATOR . 'Database.php';
@@ -90,6 +88,7 @@ require LIBRARY_OUTPUT    . DIRECTORY_SEPARATOR . 'CLI.php';
 require LIBRARY_OUTPUT    . DIRECTORY_SEPARATOR . 'PHP.php';
 require LIBRARY_OUTPUT    . DIRECTORY_SEPARATOR . 'PRINTR.php';
 require LIBRARY_OUTPUT    . DIRECTORY_SEPARATOR . 'JS.php';
+require LIBRARY_OUTPUT    . DIRECTORY_SEPARATOR . 'Custom.php';
 
 // Security
 require LIBRARY_SECURITY  . DIRECTORY_SEPARATOR . 'Interface.php';
@@ -122,10 +121,18 @@ require LIBRARY_ROOT_PATH . DIRECTORY_SEPARATOR . 'Model' . DIRECTORY_SEPARATOR 
 // HTTP Digest Auth
 require LIBRARY_AUTHORIZATION . DIRECTORY_SEPARATOR . 'HTTP' . DIRECTORY_SEPARATOR . 'Digest.php';
 
+// OAuth2 Helper
+require LIBRARY_AUTHORIZATION . DIRECTORY_SEPARATOR . 'Oauth2' . DIRECTORY_SEPARATOR . 'Exception.php';
+require LIBRARY_AUTHORIZATION . DIRECTORY_SEPARATOR . 'Oauth2.php';
+
 // Lupin XML config stuff.
-require EXTRA_LIBRARIES_ROOT_PATH . 'Lupin' . DIRECTORY_SEPARATOR . 
+require EXTRA_LIBRARIES_ROOT_PATH . 'Lupin' . DIRECTORY_SEPARATOR .
                                     'Config' . DIRECTORY_SEPARATOR . 'Xml.php';
-                                    
-require EXTRA_LIBRARIES_ROOT_PATH . 'Lupin' . DIRECTORY_SEPARATOR  . 
-                                    'Config' . DIRECTORY_SEPARATOR . 
+
+require EXTRA_LIBRARIES_ROOT_PATH . 'Lupin' . DIRECTORY_SEPARATOR  .
+                                    'Config' . DIRECTORY_SEPARATOR .
                                     'Helper' . DIRECTORY_SEPARATOR . 'XmlArray.php';
+// Require the CUSTOM AllFiles
+require CUSTOM_PATH . DIRECTORY_SEPARATOR . 'AllFiles.php';
+
+

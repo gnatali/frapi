@@ -11,7 +11,6 @@
  * to license@getfrapi.com so we can send you a copy immediately.
  *
  * @license   New BSD
- * @copyright echolibre ltd.
  * @package   frapi-admin
  */
 class DatabaseController extends Lupin_Controller_Base
@@ -23,19 +22,19 @@ class DatabaseController extends Lupin_Controller_Base
         parent::init($styles);
     }
 
-    public function indexAction() 
+    public function indexAction()
     {
         $model = new Default_Model_Configuration();
         $this->view->configs = $model->getDbConfig();
     }
-    
+
     public function addAction()
     {
         $form = new Default_Form_Database();
         $this->view->form = $form;
-        
+
         $data = $this->_request->getParams();
-        
+
         if ($this->_request->isPost()) {
             if ($form->isValid($data)) {
                 $model = new Default_Model_Configuration();
@@ -47,16 +46,16 @@ class DatabaseController extends Lupin_Controller_Base
             }
         }
     }
-    
+
     public function editAction()
     {
         $form = new Default_Form_Database();
         $model = new Default_Model_Configuration();
-        
+
         $this->view->form = $form;
-        
+
         $data = $this->_request->getParams();
-        
+
         if ($this->_request->isPost()) {
             if ($form->isValid($data)) {
                 $res = $model->editDb($data);

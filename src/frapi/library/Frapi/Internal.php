@@ -23,7 +23,6 @@ class Frapi_Internal_Exception extends Frapi_Exception {}
  * instance of the db handle to the SQLite db is maintained!
  *
  * @license   New BSD
- * @copyright echolibre ltd.
  * @package   frapi
  */
 class Frapi_Internal
@@ -36,14 +35,14 @@ class Frapi_Internal
      * @var PDO Database Adapter
      */
     protected static $dbHandle = null;
-    
+
     /**
      * This holds the Frapi_Cache object
      *
      * @param Frapi_Cache $cache The cache object.
      */
     protected static $cache;
-    
+
     protected static $conf = array();
 
     /**
@@ -63,8 +62,8 @@ class Frapi_Internal
      * there would be cache collisions and conflicts thus the need for a special
      * hash in the apc keys.
      */
-    private static $_hash = false;
-    
+    public static $_hash = false;
+
     /**
      * Logging function
      *
@@ -102,19 +101,19 @@ class Frapi_Internal
      *
      * @return Array | null
      */
-    public function getLog() 
+    public function getLog()
     {
         return self::$_log;
     }
-    
+
     /**
      * Get the configuration
      *
      * This method retrieves and loads the information.
      *
      * @TODO This method has to be optimized -- The fetched object
-     * has to be cached so we don't parse XML files each time. If we cache the 
-     * $xml object directly into APC we end up with Incomplete classes, and if we 
+     * has to be cached so we don't parse XML files each time. If we cache the
+     * $xml object directly into APC we end up with Incomplete classes, and if we
      * encode it using json_encode well we loose all it's properties (access to methods).
      *
      * @param  string $type  The configuration to load.
@@ -123,10 +122,16 @@ class Frapi_Internal
     public static function getConfiguration($type)
     {
         if (!isset(self::$cache)) {
-            self::$cache = Frapi_Cache::getInstance(FRAPI_CACHE_ADAPTER);   
+            self::$cache = Frapi_Cache::getInstance(FRAPI_CACHE_ADAPTER);
         }
-        
+
         if (!isset(self::$conf[$type])) {
+            /**
+             * Hater's gon hate. This is there so we know that we have to rework
+             * it and that we don't actually loose the initial "if" statement.
+             *
+             * @TODO @FIXME
+             */
             if (1 == 2 && $cachedConfig = self::getCached('Internal.configuration.type.' . $type)) {
                 return $cachedConfig;
             } else {
@@ -135,7 +140,7 @@ class Frapi_Internal
                 //self::setCached('Internal.configuration.type.' . $type, self::$conf[$type]);
             }
         }
-        
+
         return self::$conf[$type];
     }
 
@@ -151,7 +156,7 @@ class Frapi_Internal
         if ($cached = self::getCached($key)) {
             return $cached;
         } else {
-            
+
             $res  = self::getConfiguration($query['type']);
             $rows = $res->getAll($query['node']);
 
@@ -165,11 +170,11 @@ class Frapi_Internal
                     return $return;
                 }
             }
-        
+
             return $return;
         }
     }
-    
+
     /**
      * Retrieve the cached partners
      *
@@ -184,20 +189,20 @@ class Frapi_Internal
         if ($cached = self::getCached('Partners.emails-' . $type)) {
             return $cached;
         } else {
-        
+
             $res  = self::getConfiguration('partners');
             $rows = $res->getAll('partner');
-        
+
             if ($rows !== false) {
                 foreach ($rows as $key => $value) {
                     $users[$value['email']] = $value;
                 }
-                
+
                 if (!self::setCached('Partners.emails-' . $type,  $users)) {
                     return $users;
                 }
             }
-    
+
             return self::getCached('Partners.emails-' . $type);
         }
     }
@@ -216,20 +221,20 @@ class Frapi_Internal
         if ($cached = self::getCached('Database.configs')) {
             return $cached;
         } else {
-        
+
             $res  = self::getConfiguration('configurations');
             $rows = $res->getAll('configuration');
-            
+
             if ($rows !== false) {
                 foreach ($rows as $key => $value) {
-                    $confs[$value['key']] = $value['value'];
+                    $confs[$value['key']] = !empty($value['value']) ? $value['value'] : '';
                 }
-                
+
                 if (!self::setCached('Database.configs',  $confs)) {
                     return $confs;
                 }
             }
-    
+
             return self::getCached('Database.configs');
         }
     }
@@ -251,13 +256,13 @@ class Frapi_Internal
         if ($cached = self::getCached('Actions.enabled-' . $type)) {
             return $cached;
         } else {
-            
+
             $res  = self::getConfiguration('actions');
             $rows = $res->getAll('action');
 
             $private = array();
             $public  = array();
-            
+
             if ($rows !== false) {
                 foreach ($rows as $row) {
                     if (!is_array($row) || empty($row)) {
@@ -274,19 +279,19 @@ class Frapi_Internal
                 if (!self::setCached('Actions.enabled-public',  $public)) {
                     return $public;
                 }
-                
+
                 if (!self::setCached('Actions.enabled-private', $private)) {
                     return $private;
                 }
             }
-        
+
             return self::getCached('Actions.enabled-' . $type);
         }
     }
 
     /**
      * Get a hash of your server
-     * 
+     *
      * If you happen to have multiple installations of frapi
      * you would get apc cache collisions if we woulnd't have
      * some sort of hashing and identification of the hostnames.
@@ -301,11 +306,11 @@ class Frapi_Internal
         if (self::$_hash) {
             return self::$_hash;
         }
-        
+
         self::$_hash = hash('sha1', $_SERVER['HTTP_HOST']);
         return self::$_hash;
     }
-    
+
     /**
      * Get a (possibly cached) value from a number of caches.
      *
@@ -345,11 +350,11 @@ class Frapi_Internal
     {
         self::log('cache-set', $key);
         $hash = self::getHash();
-        
+
         if (!isset(self::$cache)) {
             self::$cache = Frapi_Cache::getInstance(FRAPI_CACHE_ADAPTER);
         }
-        
+
         return self::$cache->add($hash . '-' . $key, $value);
     }
 
@@ -365,11 +370,11 @@ class Frapi_Internal
     {
         self::log('cache-delete', $key);
         $hash = self::getHash();
-        
+
         if (!isset(self::$cache)) {
             self::$cache = Frapi_Cache::getInstance(FRAPI_CACHE_ADAPTER);
         }
-        
+
         return self::$cache->delete($hash.'-'.$key);
     }
 }

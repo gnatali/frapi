@@ -303,6 +303,9 @@ msgstr "Contenuto del corpo"
 msgid "TESTER_REQUEST_ERROR"
 msgstr "Errore: Non sei più loggato a causa di un lugo periodo di inattività. Per favore <a href=\"/login\" target=\"_blank\">accedi</a> nuovamente (apre in una nuova finestra) e prova nuovamente."
 
+msgid "HISTORY_ERROR"
+msgstr "Error fetching your history"
+
 # Other
 msgid "ADDED"
 msgstr "aggiunto"
@@ -425,3 +428,33 @@ msgstr "Error synchronizing actions."
 
 msgid "ROUTE"
 msgstr "Route"
+
+msgid "ADDED_ERROR"
+msgstr "Successfully added error"
+
+msgid "ERROR_ADDING_ERROR"
+msgstr "Error adding action"
+
+msgid "COULD_NOT_DELETE_ERROR"
+msgstr "Could not delete error"
+
+msgid "SUCCESS_DELETE_ERROR"
+msgstr "Successfully deleted error"
+
+msgid "ERROR_DELETING_ERROR"
+msgstr "Error deleting errror"
+
+msgid "COULD_NOT_DELETE PARTNER"
+msgstr "Could not delete partner"
+
+msgid "SUCCESS_DELETE_PARTNER"
+msgstr "Successfully deleted partner"
+
+msgid "ERROR_DELETING_PARTNER"
+msgstr "Error deleting partner"
+
+msgid "USE_CDATA"
+msgstr "Always use CDATA"
+
+msgid "ALLOW_CROSSDOMAIN"
+msgstr "Allow cross domain requests"

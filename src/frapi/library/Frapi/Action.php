@@ -22,10 +22,9 @@
  * a username/email and secretkey (Set from the admin).
  *
  * @license   New BSD
- * @copyright echolibre ltd.
  * @package   frapi
  * @uses      Frapi_Action_Exception
- */ 
+ */
 class Frapi_Action
 {
     // Types used in getParam for casting
@@ -53,13 +52,6 @@ class Frapi_Action
     protected $action;
 
     /**
-     * This is the pid of the person that has been logged.
-     *
-     * @var string   The session saved pid
-     */
-    protected $sessionPid;
-
-    /**
      * The parameters passed to the action
      * context object.
      *
@@ -67,6 +59,13 @@ class Frapi_Action
      *                    but usually this comes from the $_REQUEST
      */
     protected $params;
+
+    /**
+     * The parameters passed in via the Accept header
+     *
+     * @var array $params
+     */
+    protected $acceptParams;
 
     /**
      * Those are the files uploaded to the server.
@@ -89,7 +88,7 @@ class Frapi_Action
      * @var string $uid  The user uid (Internally used only)
      */
     protected $uid;
-    
+
     /**
      * If one decides to use a custom template in the XML or HTML output
      * then this variable will be set.
@@ -97,7 +96,7 @@ class Frapi_Action
      * @var string The name of the custom template to load from custom/Output/{type}/custom/
      */
     protected $customTemplate = false;
-    
+
     /**
      * Get an instance of the desired type of Action
      * Context using the action passed to it
@@ -148,11 +147,33 @@ class Frapi_Action
     public function setActionParams(array $params)
     {
         $this->action = isset($params['action']) ? $params['action'] : null;
-        
+
         $this->params = $params;
         return $this;
     }
-    
+
+    /**
+     * Set the Accept header parameters
+     *
+     * @param array $params The params parsed from the Accept header
+     */
+    public function setAcceptParams(array $params)
+    {
+        $this->acceptParams = $params;
+        return $this;
+    }
+
+    /**
+     * Set the action context action method to be called, for reference
+     *
+     * @param string $action
+     */
+    public function setAction($action)
+    {
+        $this->action = $action;
+        return $this;
+    }
+
     /**
      * Retrieve the action we are invoking.
      *
@@ -166,7 +187,7 @@ class Frapi_Action
     {
         return $this->action;
     }
-     
+
     /**
      * Set the template file to use
      *
@@ -179,8 +200,9 @@ class Frapi_Action
     public function setTemplateFileName($customTemplateFileName)
     {
         $this->customTemplate = $customTemplateFileName;
+        return $this;
     }
-    
+
     /**
      * Get the template to load
      *
@@ -193,7 +215,7 @@ class Frapi_Action
     {
         return $this->customTemplate;
     }
-    
+
     /**
      * This method validates that all your parameters
      * required for your action to run are present.
@@ -232,6 +254,13 @@ class Frapi_Action
     public function executePost()   { return $this->executeAction(); }
     public function executeDelete() { return $this->executeAction(); }
     public function executeHead()   { return $this->executeAction(); }
+    public function executeTrace()  { return $this->executeAction(); }
+    public function executeOptions(){ return $this->executeAction(); }
+
+    // non-RESTful action but curl -X DOCS could have some interesting
+    // implications in the future.
+    public function executeDocs()   { return $this->executeAction(); }
+
 
     /**
      * Return all the parameters
@@ -244,6 +273,19 @@ class Frapi_Action
     public function getParams()
     {
         return $this->params;
+    }
+
+    /**
+     * Return all the Accept parameters
+     *
+     * Return all the accept parameters we are currently holding
+     * in $this->acceptParams
+     *
+     * @return array An array of request parameters and files maybe.
+     */
+    public function getAcceptParams()
+    {
+        return $this->acceptParams;
     }
 
     /**
@@ -264,6 +306,40 @@ class Frapi_Action
      * This method will return the value of the
      * parameter. If it's not set then it returns null.
      *
+     * @param string $key        The name of the param key
+     * @param string $type       The type of casting to do when returning
+     *                           the requested parameter
+     * @param Mixed  $default    The default value, if param is empty.
+     * @param String $error_name The error name to raise, as last resort.
+     *
+     * @return Mixed String when the key is valid, ErrorContext if not valid, or null if not set.
+     */
+    protected function getParam($key, $type = self::TYPE_STRING, $default = null, $error_name = null)
+    {
+         return $this->getByKey($this->params, $key, $type, $default, $error_name);
+    }
+
+    /**
+     * This method will return the value of the Accepts
+     * parameter. If it's not set then it returns null.
+     *
+     * @param string $key        The name of the param key
+     * @param string $type       The type of casting to do when returning
+     *                           the requested parameter
+     * @param Mixed  $default    The default value, if param is empty.
+     * @param String $error_name The error name to raise, as last resort.
+     *
+     * @return Mixed String when the key is valid, ErrorContext if not valid, or null if not set.
+     */
+    protected function getAcceptParam($key, $type = self::TYPE_STRING, $default = null, $error_name = null)
+    {
+         return $this->getByKey($this->acceptParams, $key, $type, $default, $error_name);
+    }
+
+    /**
+     * This method will return the value from the array, by key.
+     * If it's not set then it returns null.
+     *
      * The function is coded such that FALSE is known to indicate
      * non-existence of param in $params, NULL indicates that
      * param was empty and no default or error was supplied.
@@ -279,13 +355,13 @@ class Frapi_Action
      * @param string $type       The type of casting to do when returning
      *                           the requested parameter
      * @param Mixed  $default    The default value, if param is empty.
-     * @param String $error_name The error name to raise, as last resort. 
+     * @param String $error_name The error name to raise, as last resort.
      *
      * @return Mixed String when the key is valid, ErrorContext if not valid, or null if not set.
      */
-    protected function getParam($key, $type = self::TYPE_STRING, $default = null, $error_name = null) 
+    protected function getByKey(array $array, $key, $type = self::TYPE_STRING, $default = null, $error_name = null)
     {
-        $param = isset($this->params[$key]) ? $this->params[$key] : null;
+        $param = isset($array[$key]) ? $array[$key] : $default;
 
         switch ($type) {
             case self::TYPE_FILE;
@@ -312,29 +388,50 @@ class Frapi_Action
                 $param = (object)$param;
                 break;
             case self::TYPE_SQL:
+                // This isn't our problem. We shouldn't have that anymore.
                 $param = mysql_escape_string($param);
                 break;
             case self::TYPE_OUTPUT:
+            case self::TYPE_OUTPUTSAFE:
                 $param = htmlentities($param, ENT_QUOTES, 'UTF-8');
                 break;
-            case self::TYPE_OUTPUTSAFE:
-                // OMFG Skype: (Puke). Code gangbang.
-                $param = htmlentities(mysql_escape_string($param), ENT_QUOTES, 'UTF-8');
-                break;
             case self::TYPE_SAFESQLARRAY:
+                // Same as TYPE_SQL: Not our problem.
                 $tmpArray = array();
                 foreach ((array)$param as $val => $par) {
                     $val = mysql_escape_string($val);
                     $par = mysql_escape_string($par);
                     $tmpArray[$val] = $par;
                 }
-                
+
                 $param = $tmpArray;
                 break;
             default:
                 $param = null;
          }
-                 
+
          return $param;
      }
+
+    /**
+     * This method checks whether a param exists or not.
+     *
+     * @param string $key The name of the param key
+     * @return bool Whether the parameter exists or not
+     */
+    protected function hasParam($key)
+    {
+        return isset($this->params[$key]);
+    }
+
+    /**
+     * This method checks whether an Accept param exists or not.
+     *
+     * @param string $key The name of the param key
+     * @return bool Whether the parameter exists or not
+     */
+    protected function hasAcceptParam($key)
+    {
+        return isset($this->acceptParams[$key]);
+    }
 }

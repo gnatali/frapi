@@ -11,7 +11,6 @@
  * to license@getfrapi.com so we can send you a copy immediately.
  *
  * @license   New BSD
- * @copyright echolibre ltd.
  * @package   frapi-admin
  */
 class Default_Model_Configuration extends Lupin_Model
@@ -31,25 +30,36 @@ class Default_Model_Configuration extends Lupin_Model
         $database = $this->config->getByField('configuration', 'key', 'db_database');
         $username = $this->config->getByField('configuration', 'key', 'db_username');
         $password = $this->config->getByField('configuration', 'key', 'db_password');
+        $engine   = $this->config->getByField('configuration', 'key', 'db_engine');
+
+        if (isset($engine) && isset($engine['value'])) {
+            $return[] = !empty($engine['value'])
+                ? $engine : array('key' => $engine['key'], 'value' => '');
+        }
 
         if (isset($hostname) && isset($hostname['value'])) {
-            $return[] = $hostname;
+            $return[] = !empty($hostname['value']) ?
+                $hostname : array('key' => $hostname['key'], 'value' => '');
         }
 
         if (isset($database) && isset($database['value'])) {
-            $return[] = $database;
+            $return[] = !empty($database['value']) ?
+                $database : array('key' => $database['key'], 'value' => '');
         }
 
         if (isset($username) && isset($username['value'])) {
-            $return[] = $username;
+            $return[] = !empty($username['value']) ?
+                $username : array('key' => $username['key'], 'value' => '');
         }
 
         if (isset($password) && isset($password['value'])) {
-            $return[] = $password;
+            $return[] = !empty($password['value']) ?
+                $password : array('key' => $password['key'], 'value' => '');
         }
 
         if (isset($cache) && isset($cache['value'])) {
-            $return[] = $cache;
+            $return[] = !empty($cache['value'])
+                ? $cache : array('key' => $cache['key'], 'value' => '');
         }
 
         return $return;
@@ -82,29 +92,65 @@ class Default_Model_Configuration extends Lupin_Model
         return true;
     }
 
+    /**
+     * Update an entry by key.
+     *
+     * This method is ubiquitously used thourough the
+     * configuration model and is used to update a
+     * configuration value by key.
+     *
+     * In the event where a configuration key does not
+     * exist, the configuration key/value pair gets
+     * created/added.
+     *
+     * @param  string $key   The key string value.
+     * @param  string $value The value to the pair.
+     *
+     * @return  bool   The result of the update operation.
+     */
     public function updateByKey($key, $value)
     {
-        $res = $this->config->getByField('configuration', 'key', $key);
+        $res = $this->config->getByField(
+            'configuration', 'key', $key
+        );
 
         if ($res === false) {
-            return $this->config->add('configuration', array(
-                'key'  => $key,
-                'value' => $value,
-            ));
+            return $this->config->add(
+                'configuration', array(
+                    'key'  => $key,
+                    'value' => $value,
+                )
+            );
         }
 
+        $this->refreshAPCCache();
+
         return $this->config->update(
-            'configuration', 'key', $key, array('value' => $value));
+            'configuration', 'key', $key,
+            array('value' => $value)
+        );
     }
 
+    /**
+     * Edit the database settings.
+     *
+     * This method is used to edit and modify
+     * the database configurations use by the
+     * service.
+     *
+     * @param array $data An associative array of
+     *                    the database configuration
+     */
     public function editDb(array $data)
     {
+        $engine   = $data['db_engine'];
         $hostname = $data['db_hostname'];
         $username = $data['db_username'];
         $password = $data['db_password'];
         $database = $data['db_database'];
 
         try {
+            $this->updateByKey('db_engine',   $engine);
             $this->updateByKey('db_hostname', $hostname);
             $this->updateByKey('db_database', $database);
             $this->updateByKey('db_username', $username);
@@ -113,6 +159,43 @@ class Default_Model_Configuration extends Lupin_Model
 
         $this->refreshAPCCache();
         return true;
+    }
+
+    /**
+     * Update the "USE C DATA" configuration.
+     *
+     * This method is used to update the use cdata
+     * configuration setting.
+     *
+     * @param string/bool $userCdata Whether or not to wrap
+     *                    data returned to the user in a
+     *                    CData block.
+     *
+     * @return bool       The result of the update operation
+     *                    on the configuration file.
+     */
+    public function updateUseCdata($useCdata)
+    {
+        return $this->updateByKey('use_cdata', $useCdata);
+    }
+
+    /**
+     * Update the "Allow X Domain Requests" configuration.
+     *
+     * This method is used to update the use x-requests
+     * configuration setting.
+     *
+     * @param string/bool $allowX Whether or not to allow
+     *                    cross-domain requests with FRAPI
+     *
+     * @return bool       The result of the update operation
+     *                    on the configuration file.
+     */
+    public function updateAllowCrossDomain($allowX)
+    {
+        return $this->updateByKey(
+            'allow_cross_domain', $allowX
+        );
     }
 
     public function updateApiUrl($api_url)
@@ -128,7 +211,7 @@ class Default_Model_Configuration extends Lupin_Model
     public function getKey($key)
     {
         $key = $this->config->getByField('configuration', 'key', $key);
-        if (isset($key)) {
+        if (isset($key) && isset($key['value'])) {
             return $key['value'];
         }
 

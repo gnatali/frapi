@@ -27,7 +27,6 @@ class Frapi_Output_Exception extends Frapi_Exception {}
  *
  * @uses      Frapi_Output_Exception
  * @license   New BSD
- * @copyright echolibre ltd.
  * @package   frapi
  */
 class Frapi_Output
@@ -109,6 +108,13 @@ class Frapi_Output
     {
         header('HTTP/1.1 '.intval($response->getStatusCode()));
 
+        if ($response instanceof Frapi_Response) {
+            $content_type = $response->getContentType();
+            if ($content_type) {
+                $this->mimeType = $content_type;
+            }
+        }
+
         header('Content-type: '.$this->mimeType.'; charset=utf-8');
 
         //IF debugging is turned on, then send cache info
@@ -133,6 +139,17 @@ class Frapi_Output
             }
         }
 
+        $cache = new Frapi_Internal();
+        $cache = $cache->getCachedDbConfig();
+        $allowCrossDomain = isset($cache['allow_cross_domain']) ? $cache['allow_cross_domain'] : false;
+
+        if ($allowCrossDomain) {
+            header('Access-Control-Allow-Origin: *');
+            header('Access-Control-Allow-Headers: *');
+            header('Access-Control-Allow-Credentials: true');
+            header('Access-Control-Allow-Methods: POST,GET,PUT,DELETE,HEAD');
+            header('Access-Control-Max-Age: 604800');
+        }
         return $this;
     }
 
@@ -154,6 +171,36 @@ class Frapi_Output
         $this->setOutputType($type);
         $this->setOutputAction($action);
         return $this;
+    }
+
+    public static function getMimeTypeMap()
+    {
+        try {
+            $cache = new Frapi_Internal();
+            $mimetypes = $cache->getConfiguration('mimetypes')->getAll('mimetype');
+
+            $outputs = $cache->getConfiguration('outputs')->getAll('output');
+
+            $disabled = array();
+            foreach ($outputs as $output) {
+                if ($output['enabled'] == 0) {
+                    $disabled[strtolower($output['name'])] = true;
+                }
+            }
+
+            $map = array();
+            foreach ($mimetypes as $mimetype) {
+                if (isset($disabled[strtolower($mimetype['output_format'])])) {
+                    continue;
+                }
+                $map[$mimetype['mimetype']] = $mimetype['output_format'];
+            }
+        } catch (Exception $e) {
+            // No matter what happens for legacy reasons we fallback to the defaults
+            return false;
+        }
+
+        return $map;
     }
 
     /**

@@ -11,7 +11,6 @@
  * to license@getfrapi.com so we can send you a copy immediately.
  *
  * @license   New BSD
- * @copyright echolibre ltd.
  * @package   frapi-admin
  */
 class Console_ActionController extends Zend_Controller_Action
@@ -122,7 +121,7 @@ class Console_ActionController extends Zend_Controller_Action
         $model = new Default_Model_Action();
         try {
             $model->add($submit_data);
-            $this->view->message = $this->tr->_('ADDED_ACTION') . ' ' . $action_name . PHP_EOL;
+            $this->view->message = $this->tr->_('ADDED_ACTION') . ': ' . $action_name . PHP_EOL;
         } catch (RuntimeException $e) {
             $this->view->message = $this->tr->_('ERROR_ADDING_ACTION') . ': ' . $action_name . '. ' . $e->getMessage() . PHP_EOL;
         }
@@ -194,7 +193,7 @@ class Console_ActionController extends Zend_Controller_Action
     {
         $this->_helper->viewRenderer->setViewSuffix('txt');
 
-        $dir  = ROOT_PATH . DIRECTORY_SEPARATOR . 'custom' . DIRECTORY_SEPARATOR . 'Action';
+        $dir  = CUSTOM_PATH . DIRECTORY_SEPARATOR . 'Action';
 
         if (!is_writable($dir)) {
             $this->view->message = $this->tr->_('ACTION_WRITE_ERROR', $dir) . PHP_EOL;

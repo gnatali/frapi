@@ -4,6 +4,7 @@
 <script type="text/javascript" src="/scripts/syntaxhighlighter/shBrushPlain.js"></script>
 <script type="text/javascript" src="/scripts/syntaxhighlighter/shBrushXml.js"></script>
 <script type="text/javascript" src="/scripts/customBrushHeaders.js"></script>
+<script type="text/javascript" src="/scripts/beautify.js"></script>
 <link type="text/css" rel="stylesheet" href="/css/syntaxhighlighter/shCore.css"/>
 <link type="text/css" rel="stylesheet" href="/css/syntaxhighlighter/shThemeDefault.css"/>
 <script type="text/javascript">
@@ -83,10 +84,12 @@ echo $this->form;
         }
     });
 
-    function addParamInput(paramName)
+    function addParamInput(paramName, paramValue)
     {
         var value = paramName ? paramName + "=" : "";
+        var value = paramValue ? value + paramValue : "";
         $("#params").append('<p><input type="text" name="param[]" value="'+value+'" /> <img src="/images/delete.png" class="remove" /></p>');
+        $("#params input:last").focus();
     }
 
     $(function(){
@@ -124,6 +127,8 @@ echo $this->form;
         var email    = $('#email').val();
         var key      = $('#key').val();
         var format   = $('#format').val();
+
+
         var url      = $('#url').val();
         var ssl      = $('#ssl').is(':checked');
 
@@ -169,6 +174,17 @@ echo $this->form;
             }
         }
 
+        if (format.indexOf('JSON') >= 0) {
+            $('#beautify').live('click', function() {
+                var code = $('#response-container').attr('data-content')
+                code = js_beautify(code);
+                $('#response-container div.syntaxhighlighter').remove();
+                $('#response-container').append('<pre id="response" />');
+                $('pre#response').html(code).addClass('brush: jscript');
+                highlight_response();
+            });
+        }
+
         $.ajax( {
            type:    "GET",
            url:     "/tester/ajax",
@@ -210,13 +226,25 @@ echo $this->form;
                $('#response-container').append(
                    $('<pre>').attr('id', '#response_headers').addClass("brush: headers").html(data.response_headers)
                );
-               $('#response-container').append(
+
+               var responseContent = '';
+               responseContent = $('<pre>').attr('id', 'response').addClass("brush: " + brush).html(unescape(data.content));
+
+
+               $('#response-container').attr('data-content', data.content).append(
                    $('<h2><?php echo $this->tr->_('CONTENT_BODY'); ?></h2>')
-               ).append(
-                   $('<pre>').attr('id', '#response').addClass("brush: " + brush).html(unescape(data.content))
-               );
+               ).append(responseContent);
+
+
+               var abeauty = $('<a id="beautify">Beautify</a>').css({cursor: 'pointer'});
+               if (format.indexOf('JSON') >= 0) {
+                   $('#response-container').append(abeauty);
+               } else {
+                   $('#beautify').remove();
+               }
 
                highlight_response();
+
 
                $('#submitter').attr('disabled', false)
                               .attr('value', '<?php echo $this->tr->_('RUN_TEST'); ?>');
@@ -249,6 +277,48 @@ echo $this->form;
         });
 
         return false;
+    });
+
+    $('#action').live('change', function() {
+        var inHistory = false;
+        var queryURI  = $('#query_uri').val();
+
+        $('#action optgroup[label=History] option').each(function() {
+            if ($(this).val() == queryURI) {
+                inHistory = true;
+            }
+        });
+
+        if (inHistory) {
+            $.ajax({
+                type:    "GET",
+                url:     "/tester/history",
+                data:    "url=" + escape(queryURI),
+                success: function(data) { 
+                    $("#query_uri").val(data.query_uri);
+                    $("#format").attr("value", data.format.toUpperCase());
+                    $("#method").attr("value", data.method.toLowerCase());
+                    $("#email").val(data.email);
+                    $("#key").val(data.secretKey);
+                    $("#url").val(data.url);
+
+                    if (typeof(data.ssl) != "undefined") {
+                        $("#ssl").attr("checked", data.ssl); 
+                    }
+
+                    if (typeof(data.param) != "undefined") {
+                        for(i in data.param) {
+                            var param_parts = data.param[i].split("=")
+                            addParamInput(param_parts[0], param_parts[1]);
+                        }
+                    }
+                },
+                dataType: "json",
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    alert('<?php echo $this->tr->_('HISTORY_ERROR'); ?>');
+                }
+            });
+        }
     });
 </script>
 
