@@ -15,5 +15,12 @@
    <description>Used in documentation</description>
    <hash>137595984a31492d0637fe873922537b13094e53</hash>
   </error>
+  <error>
+   <name>UNAVAILABLE</name>
+   <message>Le service demandé n'est pas/plus disponible</message>
+   <http_code>410</http_code>
+   <description>Erreur a retourner sur les services non disponible</description>
+   <hash>e67fc2233560e293f2db25138da04bb3991fd6fb</hash>
+  </error>
  </errors>
 </frapi-config>

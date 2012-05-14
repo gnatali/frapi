@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Action Testing2 
+ * Action Test 
  * 
- * Testing 2
+ * service de test
  * 
  * @link http://getfrapi.com
  * @author Frapi <frapi@getfrapi.com>
- * @link /testing/2
+ * @link Array
  */
-class Action_Testing2 extends Frapi_Action implements Frapi_Action_Interface
+class Action_Test extends Frapi_Action implements Frapi_Action_Interface
 {
 
     /**
@@ -17,7 +17,10 @@ class Action_Testing2 extends Frapi_Action implements Frapi_Action_Interface
      * 
      * @var An array of required parameters.
      */
-    protected $requiredParams = array('name');
+    protected $requiredParams = array(
+        'nom',
+        'prenom'
+        );
 
     /**
      * The data container to use in toArray()
@@ -36,7 +39,8 @@ class Action_Testing2 extends Frapi_Action implements Frapi_Action_Interface
      */
     public function toArray()
     {
-        $this->data['name'] = $this->getParam('name', self::TYPE_OUTPUT);
+        $this->data['nom'] = $this->getParam('nom', self::TYPE_OUTPUT);
+        $this->data['prenom'] = $this->getParam('prenom', self::TYPE_OUTPUT);
         return $this->data;
     }
 
@@ -66,9 +70,11 @@ class Action_Testing2 extends Frapi_Action implements Frapi_Action_Interface
      */
     public function executeGet()
     {
-        $this->data['name'] = 'david';
+        $valid = $this->hasRequiredParameters($this->requiredParams);
+        if ($valid instanceof Frapi_Error) {
+            return $valid;
+        }
         
-        $this->setTemplateFileName('CustomTesting2');
         return $this->toArray();
     }
 

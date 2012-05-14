@@ -1,11 +1,11 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <frapi-config>
-  <users>
-    <user>
-      <handle>admin</handle>
-      <password>5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8</password>
-      <role>admin</role>
-      <active>1</active>
-    </user>
-  </users>
+ <users>
+  <user>
+   <handle>admin</handle>
+   <password>788b2ea564f9eef189658e43135ca308a114ce8c</password>
+   <role>admin</role>
+   <active>1</active>
+  </user>
+ </users>
 </frapi-config>

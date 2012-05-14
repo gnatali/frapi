@@ -28,5 +28,39 @@
     </parameter>
    </parameters>
   </action>
+  <action>
+   <name>SendMail</name>
+   <enabled>1</enabled>
+   <public>0</public>
+   <description>Envoyé un mail</description>
+   <route>sendmail/1</route>
+   <hash>fa7cc3d72240d63322ea73f1c7327e5750eda9af</hash>
+   <parameters>
+    <parameter>
+     <name>from</name>
+     <required>1</required>
+    </parameter>
+    <parameter>
+     <name>to</name>
+     <required>1</required>
+    </parameter>
+    <parameter>
+     <name>body</name>
+     <required>1</required>
+    </parameter>
+    <parameter>
+     <name>subject</name>
+     <required>1</required>
+    </parameter>
+    <parameter>
+     <name>cc</name>
+     <required>0</required>
+    </parameter>
+    <parameter>
+     <name>bcc</name>
+     <required>0</required>
+    </parameter>
+   </parameters>
+  </action>
  </actions>
 </frapi-config>

@@ -2,12 +2,28 @@
 <frapi-config>
  <partners>
   <partner>
-   <firstname>test</firstname>
-   <lastname>test</lastname>
-   <email>test</email>
-   <company>test</company>
-   <api_key>34c285b25ac62f9472265d1e41f8a77f5d2382f6</api_key>
-   <hash>e326a4351d1fc4399b68eba62f15a52a7335b7a0</hash>
+   <firstname>Guillaume</firstname>
+   <lastname>NATALI</lastname>
+   <email>guillaume.natali@socius.fr</email>
+   <company>Groupe SOCIUS (guillaume)</company>
+   <api_key>36000ca7be25c7ba8154755b4beb4c7d48197a13</api_key>
+   <hash>fc751ece6f8c82c3f55c3668829ba5e7363a4caf</hash>
+  </partner>
+  <partner>
+   <firstname>Nicolas</firstname>
+   <lastname>Marchand</lastname>
+   <email>nicolas.marchand@socius.fr</email>
+   <company>Groupe SOCIUS (nicolas)</company>
+   <api_key>58598fe573a546266fab4c235734764d43248d14</api_key>
+   <hash>0c795a18566573be2752bbbffa91840d8b1104d7</hash>
+  </partner>
+  <partner>
+   <firstname>logeas</firstname>
+   <lastname>logeas</lastname>
+   <email>logeas@socius.fr</email>
+   <company>Groupe SOCIUS (logeas)</company>
+   <api_key>86f2ee7a24182ff316a1c0661507ec2516499989</api_key>
+   <hash>cc5c2ca693e2572d7b41d9580bf0c544129c87ff</hash>
   </partner>
  </partners>
 </frapi-config>
