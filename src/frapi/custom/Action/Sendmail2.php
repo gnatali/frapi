@@ -20,16 +20,19 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
 	const ERROR_EMAIL_INVALID_NO				= 411;
 	const ERROR_SENDING_EMAIL_NO				= 412;
 	const ERROR_MAX_EMAIL_NO					= 413;
+	const ERROR_CLASSE_NO						= 414;
 
 	const ERROR_SERVICE_UNAVAILABLE_MSG			= 'Le service demandé n\'est pas/plus disponible';
 	const ERROR_EMAIL_INVALID_MSG				= 'Une ou plusieurs emails semblent invalides';
 	const ERROR_SENDING_EMAIL_MSG				= 'Impossible d\'envoyer le mail';
 	const ERROR_MAX_EMAIL_MSG				   	= 'Nombre maximum de destinataire dépassé (%d>%d)';
+	const ERROR_CLASSE_MSG						= 'Reponse mal formée, la classe n\'est pas définie';
 	
 	const ERROR_SERVICE_UNAVAILABLE_NAME		= 'ERROR_SERVICE_UNAVAILABLE';
 	const ERROR_EMAIL_INVALID_NAME				= 'ERROR_EMAIL_INVALID';
 	const ERROR_SENDING_EMAIL_NAME				= 'ERROR_SENDING_EMAIL';
 	const ERROR_MAX_EMAIL_NAME					= 'ERROR_MAX_EMAIL_NAME';
+	const ERROR_CLASSE_NAME						= 'ERROR_CLASSE_NAME';
 
 	const ERROR_EMAIL_INVALID_LABEL				= 'Email(s) non valide : %s';
 	const ERROR_SENDING_EMAIL_LABEL				= 'Erreur : %s';
@@ -46,7 +49,7 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
     protected $requiredParams = array(
         'from',
         'to',
-                'subject',
+        'subject',
         'body'
         );
 
@@ -57,6 +60,13 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
      */
     private $data = array();
 
+	/**
+	 * Indique si l'on est en mode debug
+	 *
+	 * @var si vrai, aucun mail n'est envoyé.
+	 */
+	private $debug = true;
+	
     /**
      * The data container to use in toArray()
      *
@@ -64,6 +74,15 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
      */
 	private $warnings = array();
 	
+	/**
+	 * nom de la classe reponse
+	 **/
+	private $classe = null;
+	
+	/**
+	 * log de debug
+	 **/
+	private $_log = array();
 	
     public function __construct()
     {
@@ -97,7 +116,7 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
         return false;
     }
 
-	private function checkEmailList($param, $list_emails = NULL) {
+	private function checkEmailList($param, $list_emails = NULL, $raise_empty = false) {
 		$emails = trim($this->getParam($param,self::TYPE_STRING));
 		$valide=array();
 		$invalide=array();
@@ -112,12 +131,17 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
 			}
 		}
 
-		if (empty($valide))
-			unset($this->Param[$param]);
-		else
-			$this->Param[$param] = implode(',',$valide);
-
-		if (is_null($list_emails)&&(!empty($invalide))) {
+		if (empty($valide)) {
+			unset($this->params[$param]);
+			$this->log($param.' est invalide : '.implode(',',$invalide));
+		}
+		else {
+			$this->params[$param] = implode(',',$valide);
+			$this->log($param.' est valide : '.implode(',',$valide));
+		}
+			
+		if ( (is_null($list_emails)&&(!empty($invalide))) ||
+			 ($raise_empty && empty($valide)) ) {
 			throw new Frapi_Action_Exception (
 				Action_Sendmail::ERROR_EMAIL_INVALID_MSG,
 				Action_Sendmail::ERROR_EMAIL_INVALID_NAME,
@@ -136,8 +160,20 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
 		
 		return $list_emails;
 	}
+	
+	
+	private function setClasse($classe) {
+		$this->classe = $classe;
+	}
+	
 
-	private function AddWarning($name, $num, $values) {
+	private function addData($name, $value) {
+		if (is_array($value)) $value = implode(',',$value);
+		
+		$this->data[$name] = $value;
+	}
+	
+	private function addWarning($name, $num, $values) {
 		if (is_array($values)) $values=implode(',',$values);
 		
 		$this->warnings[] = array('warning'=>
@@ -146,6 +182,17 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
 				'numero'=>$num,
 				'values'=>htmlentities($values)));
 	}
+	
+	private function log($message) {
+		if ($this->debug) {
+			$this->_log[] = $message;
+		}
+	}
+	
+	private function setMessage($message) {
+		$this->addData('message',htmlentities($message));
+	}
+	
     /**
      * To Array
      *
@@ -156,17 +203,28 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
      */
     public function toArray()
     {
-        return array('sendmail'=>$this->data);
+		if ( ! $this->classe ) {
+			throw new Frapi_Action_Exception (
+				Action_Sendmail::ERROR_CLASSE_MSG,
+				Action_Sendmail::ERROR_CLASSE_MSG,
+				Action_Sendmail::ERROR_CLASSE_NO,
+				Action_Sendmail::ERROR_CLASSE_MSG,
+				400);		
+		}
+		
+		$result = $this->data;
+	
+		if (count($this->warnings))
+			$result['warnings'] = $this->warnings;
+		if ($this->debug) {
+			$result['debug'] = true;
+			$result['log'] = implode("\n",$this->_log);
+		}
+			
+		return array('sendmail'=>array($this->classe => $result));
     }
 
-	public function toResult()
-	{
-		return array('sendmail'=>array(
-				'result'=>
-					array_merge($this->data,
-					array('warnings' => $this->warnings))));
-	}
-    /**
+   /**
      * Default Call Method
      *
      * This method is called when no specific request handler has been found
@@ -183,21 +241,21 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
         return $this->toArray();
     }
 
-        private function return_bytes($val) {
-                $val = trim($val);
-                $last = strtolower($val[strlen($val)-1]);
-                switch($last) {
-                        // The 'G' modifier is available since PHP 5.1.0
-                        case 'g':
-                                $val *= 1024;
-                        case 'm':
-                                $val *= 1024;
-                        case 'k':
-                                $val *= 1024;
-                }
+	private function return_bytes($val) {
+			$val = trim($val);
+			$last = strtolower($val[strlen($val)-1]);
+			switch($last) {
+					// The 'G' modifier is available since PHP 5.1.0
+					case 'g':
+							$val *= 1024;
+					case 'm':
+							$val *= 1024;
+					case 'k':
+							$val *= 1024;
+			}
 
-                return $val;
-        }
+			return $val;
+	}
 
     /**
      * Get Request Handler
@@ -212,22 +270,17 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
         //upload_max_filesize  : taille max des fichiers uploadé
         //max_file_uploads : nombre max de fichier
         //file_uploads : autorise l'upload de fichier
-
-                $this->data = array('config'=>array(
-                        'required' => implode(',',$this->requiredParams),
-                        'post_max_size' => $this->return_bytes(ini_get('post_max_size')),
-                        'upload_max_filesize' => $this->return_bytes(ini_get('upload_max_filesize')),
-                        'max_file_uploads' => ini_get('max_file_uploads'),
-                        'file_uploads' => ((ini_get('file_uploads') && (ini_get('max_file_uploads')>0))?'true':'false'),
-                        'max_email' => Action_Sendmail::MAX_EMAIL)
-                );
-
-        //throw new Frapi_Error('UNAVAILABLE');
-        //$valid = $this->hasRequiredParameters($this->requiredParams);
-        //if ($valid instanceof Frapi_Error) {
-        //    return $valid;
-        //}
-                return $this->toArray();
+		
+		$this->addData('required',$this->requiredParams);		
+		$this->addData('post_max_size',$this->return_bytes(ini_get('post_max_size')));
+		$this->addData('upload_max_filesize',$this->return_bytes(ini_get('upload_max_filesize')));
+		$this->addData('max_file_uploads',ini_get('max_file_uploads'));
+		$this->addData('file_uploads',((ini_get('file_uploads') && (ini_get('max_file_uploads')>0))?'true':'false'));
+		$this->addData('max_email',Action_Sendmail::MAX_EMAIL);
+		
+		$this->setClasse('config');
+		
+		return $this->toArray();
     }
 
     /**
@@ -239,15 +292,18 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
      */
     public function executePost()
     {
+		if (isset($this->params['debug'])) $this->debug = true;
+		
 		$emails = array();
 		
 
 		$this->checkEmailList('from');
 		
-		$emails = $this->checkEmailList('to', $emails);
+		$emails = $this->checkEmailList('to', $emails, true);
 		$emails = $this->checkEmailList('cc', $emails);
 		$emails = $this->checkEmailList('bcc',$emails);
 
+		
 		$this->params['subject'] = trim($this->getParam('subject',self::TYPE_STRING));
 		$this->params['body'] = trim($this->getParam('body',self::TYPE_STRING));
 		$this->params['bodyhtml'] = trim($this->getParam('bodyhtml',self::TYPE_STRING));
@@ -262,10 +318,10 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
 		$emails['valide'] = array_unique($emails['valide']);
 		if (count($emails['valide'])>Action_Sendmail::MAX_EMAIL) {
 			throw new Frapi_Action_Exception (
-				Action_Sendmail::ERROR_SENDING_EMAIL_MSG,
-				Action_Sendmail::ERROR_SENDING_EMAIL_MSG,
-				Action_Sendmail::ERROR_SENDING_EMAIL_NO,
-				sprintf(Action_Sendmail::ERROR_SENDING_EMAIL_LABEL,count($emails['valide']),Action_Sendmail::MAX_EMAIL) ,
+				Action_Sendmail::ERROR_MAX_EMAIL_MSG,
+				Action_Sendmail::ERROR_MAX_EMAIL_MSG,
+				Action_Sendmail::ERROR_MAX_EMAIL_NO,
+				sprintf(Action_Sendmail::ERROR_MAX_EMAIL_MSG,count($emails['valide']),Action_Sendmail::MAX_EMAIL) ,
 				400);		
 		}
 		
@@ -301,22 +357,24 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
 		$hdrs = $mime->headers($hdrs);
 
 		$mail =& Mail::factory('mail');
-		$send = $mail->send($this->params['to'],$hdrs,$body);
+		
+		if (!$this->debug) {
+			$send = $mail->send($this->params['to'],$hdrs,$body);
 
-		if (PEAR::isError($send)) {
-			throw new Frapi_Action_Exception (
-				Action_Sendmail::ERROR_MAX_EMAIL_MSG,
-				Action_Sendmail::ERROR_MAX_EMAIL_MSG,
-				Action_Sendmail::ERROR_MAX_EMAIL_NO,
-				sprintf(Action_Sendmail::ERROR_SENDING_EMAIL_LABEL, htmlentities($send->getMessage())),
-				400);
+			if (PEAR::isError($send)) {
+				throw new Frapi_Action_Exception (
+					Action_Sendmail::ERROR_MAX_EMAIL_MSG,
+					Action_Sendmail::ERROR_MAX_EMAIL_MSG,
+					Action_Sendmail::ERROR_MAX_EMAIL_NO,
+					sprintf(Action_Sendmail::ERROR_SENDING_EMAIL_LABEL, htmlentities($send->getMessage())),
+					400);
+			}
 		}
 
-		$this->data = array(
-				'message'=>'Mail envoyé correctement'
-				);
-
-        return $this->toResult();
+		$this->setMessage('Mail envoyé correctement');
+		$this->setClasse('result');
+		
+        return $this->toArray();
     }
 
     /**
@@ -329,12 +387,6 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
     public function executePut()
     {
         throw new Frapi_Error('UNAVAILABLE');
-        //$valid = $this->hasRequiredParameters($this->requiredParams);
-        //if ($valid instanceof Frapi_Error) {
-        //    return $valid;
-       // }
-
-        //return $this->toArray();
     }
 
     /**
@@ -347,13 +399,7 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
     public function executeDelete()
     {
         throw new Frapi_Error('UNAVAILABLE');
-        //$valid = $this->hasRequiredParameters($this->requiredParams);
-        //if ($valid instanceof Frapi_Error) {
-        //    return $valid;
-        //}
-
-        //return $this->toArray();
-    }
+     }
 
     /**
      * Head Request Handler
@@ -365,12 +411,6 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
     public function executeHead()
     {
         throw new Frapi_Error('UNAVAILABLE');
-        //    $valid = $this->hasRequiredParameters($this->requiredParams);
-        //if ($valid instanceof Frapi_Error) {
-        //    return $valid;
-        //}
-
-        //return $this->toArray();
     }
 
 
