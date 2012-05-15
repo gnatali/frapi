@@ -31,6 +31,8 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
 	const ERROR_EMAIL_INVALID_LABEL            = 'Email(s) non valide : %s';
 	const ERROR_SENDING_EMAIL_LABEL            = 'Errer : %s';
 
+	const MAX_EMAIL	= 20;
+
     public $db;
     
     /**
@@ -186,7 +188,8 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
 			'post_max_size' => $this->return_bytes(ini_get('post_max_size')),
 			'upload_max_filesize' => $this->return_bytes(ini_get('upload_max_filesize')),
 			'max_file_uploads' => ini_get('max_file_uploads'),
-			'file_uploads' => ((ini_get('file_uploads') && (ini_get('max_file_uploads')>0))?'true':'false'))
+			'file_uploads' => ((ini_get('file_uploads') && (ini_get('max_file_uploads')>0))?'true':'false'),
+			'max_email' => Action_Sendmail::MAX_EMAIL)
 		);
 		
 	//throw new Frapi_Error('UNAVAILABLE');    
@@ -322,4 +325,3 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
 
 
 }
-

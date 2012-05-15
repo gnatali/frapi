@@ -33,7 +33,7 @@
   <configuration>
    <key>use_cdata</key>
    <hash>d36820838f92275c856b7cab1c5563976fb72c72</hash>
-   <value>1</value>
+   <value>0</value>
   </configuration>
   <configuration>
    <key>allow_cross_domain</key>

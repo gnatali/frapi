@@ -119,10 +119,50 @@ HEAD: Retrieve the meta information relative to a sibling.&#13;
    <name>Introduction</name>
    <enabled>1</enabled>
    <public>1</public>
-   <description></description>
    <route>/</route>
-   <parameters></parameters>
    <hash>29e39f311db4ca2ef7dacf8d8c493ef69aa29b61</hash>
+  </action>
+  <action>
+   <name>Sendmail2</name>
+   <enabled>1</enabled>
+   <public>0</public>
+   <description></description>
+   <route>/sendmail/2</route>
+   <hash>7da4be2498420bfa4514ea1c8593bcae639ede32</hash>
+   <parameters>
+    <parameter>
+     <name>from</name>
+     <required>1</required>
+    </parameter>
+    <parameter>
+     <name>to</name>
+     <required>1</required>
+    </parameter>
+    <parameter>
+     <name>body</name>
+     <required>1</required>
+    </parameter>
+    <parameter>
+     <name>subject</name>
+     <required>1</required>
+    </parameter>
+    <parameter>
+     <name>cc</name>
+     <required>0</required>
+    </parameter>
+    <parameter>
+     <name>bcc</name>
+     <required>0</required>
+    </parameter>
+    <parameter>
+     <name>bodyhtml</name>
+     <required>0</required>
+    </parameter>
+    <parameter>
+     <name>debug</name>
+     <required>0</required>
+    </parameter>
+   </parameters>
   </action>
  </actions>
 </frapi-config>
