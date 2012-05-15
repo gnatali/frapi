@@ -65,7 +65,7 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
 	 *
 	 * @var si vrai, aucun mail n'est envoyé.
 	 */
-	private $debug = true;
+	private $debug = false;
 	
     /**
      * The data container to use in toArray()
