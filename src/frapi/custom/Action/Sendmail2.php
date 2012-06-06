@@ -117,17 +117,37 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
     }
 
 	private function checkEmailList($param, $list_emails = NULL, $raise_empty = false) {
-		$emails = trim($this->getParam($param,self::TYPE_STRING));
+		$emails = trim(quoted_printable_decode($this->getParam($param,self::TYPE_STRING)));
+		$this->log("Analyse des emails '$param' : $emails");
 		$valide=array();
 		$invalide=array();
 		if ($emails <> '') {
 			$addresses = Mail_RFC822::parseAddressList($emails);
-			foreach ($addresses as $add) {
-				if ($this->check_email($add->mailbox.'@'.$add->host))
-					$valide[] = $add->personal.' <'.$add->mailbox.'@'.$add->host.'>';
+			if (! is_array($addresses)) {
+				if (is_object($addresses) && ($addresses instanceof PEAR_Error)) {
+					throw new Frapi_Action_Exception (
+                                Action_Sendmail::ERROR_EMAIL_INVALID_MSG,
+                                Action_Sendmail::ERROR_EMAIL_INVALID_NAME,
+                                Action_Sendmail::ERROR_EMAIL_INVALID_NO,
+                                htmlentities(sprintf(Action_Sendmail::ERROR_EMAIL_INVALID_LABEL,$addresses->getMessage() )." donnees sources : $emails"),
+                                400);
+ 
+				}
 				else
-					$invalide[] = $add->personal.' <'.$add->mailbox.'@'.$add->host.'>';
-
+					$this->log('Adresses n est pas un tableau : '.gettype($addresses).get_class($addresses));
+			}
+			else {
+				foreach ($addresses as $add) {
+					if (! is_object($add)) {
+						$this->log('Erreur sur : '.$add);
+					}
+					else {
+						if ($this->check_email($add->mailbox.'@'.$add->host))
+							$valide[] = $add->personal.' <'.$add->mailbox.'@'.$add->host.'>';
+						else
+							$invalide[] = $add->personal.' <'.$add->mailbox.'@'.$add->host.'>';
+					}
+				}
 			}
 		}
 
@@ -304,9 +324,9 @@ class Action_Sendmail extends Frapi_Action implements Frapi_Action_Interface
 		$emails = $this->checkEmailList('bcc',$emails);
 
 		
-		$this->params['subject'] = trim($this->getParam('subject',self::TYPE_STRING));
-		$this->params['body'] = trim($this->getParam('body',self::TYPE_STRING));
-		$this->params['bodyhtml'] = trim($this->getParam('bodyhtml',self::TYPE_STRING));
+		$this->params['subject'] = trim(quoted_printable_decode($this->getParam('subject',self::TYPE_STRING)));
+		$this->params['body'] = trim(quoted_printable_decode($this->getParam('body',self::TYPE_STRING)));
+		$this->params['bodyhtml'] = trim(quoted_printable_decode($this->getParam('bodyhtml',self::TYPE_STRING)));
 		if ($this->params['subject'] == '') $this->params['subject'] = null;
 		if ($this->params['body'] == '') $this->params['body'] = null;
 		if ($this->params['bodyhtml'] == '') $this->params['bodyhtml'] = null;
