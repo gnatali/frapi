@@ -301,7 +301,7 @@ $mimetypes = $grouped;
                                         <th class="param-name">Name</th>
                                         <th class="param-required">Required</th>
                                     </tr>
-                                    <?php
+                                    <?php var_dump($action['parameters']);
                                     foreach ($action['parameters'] as $key => $param) {
                                         if (is_array($param) && isset($param[0])) {
                                             foreach ($param as $subkey => $subparam) {
@@ -317,7 +317,7 @@ $mimetypes = $grouped;
                                                 </tr>
                                                 <?php
                                             }
-                                        }
+                                        } else {
                                         ?>
                                         <tr>
                                             <td><?php echo $param['name']; ?></td>
@@ -328,7 +328,7 @@ $mimetypes = $grouped;
                                                     ?>
                                                 </td>
                                         </tr>
-                                        <?php
+                                        <?php }
                                     }
                                     ?>
                                 </table>
