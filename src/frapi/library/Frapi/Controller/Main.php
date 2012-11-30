@@ -36,7 +36,7 @@ class Frapi_Controller_Main
      * The request parameter
      *
      * The value of the superglobal $_REQUEST
-     * variable from the web server.
+     * variable from the web server plus route variables.
      *
      * @var array $request  The $_REQUEST
      */
@@ -220,11 +220,12 @@ class Frapi_Controller_Main
             $format = $this->getParam('format');
             if (is_string($query_path_format) && strlen($query_path_format) || $format) {
                 $extension = ($query_path_format) ? $query_path_format : $format;
+
+                if ($query_path_format) {
+                    $query_path = substr($query_path, 0, (strlen($extension) + 1)*-1);
+                }
+
                 if (Frapi_Rules::validateOutputType($extension) === true) {
-                    //Output format suffix is valid, remove from URL!
-                    if ($query_path_format) {
-                        $query_path = substr($query_path, 0, (strlen($extension) + 1)*-1);
-                    }
                     $accept = Frapi_Output::getMimeTypeByFormat($extension);
                     if (isset($_SERVER['HTTP_ACCEPT'])) {
                         $_SERVER['HTTP_ACCEPT'] = $accept . ',' .$_SERVER['HTTP_ACCEPT'];
@@ -246,7 +247,9 @@ class Frapi_Controller_Main
                 $this->setAction($this->getParam('action'));
             }
 
-            $this->setFiles($_FILES);
+            // assign the files and params from the request
+            $this->setFiles($_FILES)
+                 ->setParams($this->request);
 
             $this->authorization->setAuthorizationParams($this->getParams());
         } catch (Frapi_Exception $e) {
@@ -294,11 +297,12 @@ class Frapi_Controller_Main
      * the filess variable.
      *
      * @param  array $params The params to set.
-     * @return void
+     * @return Frapi_Controller_Main
      */
     private function setFiles($params)
     {
         $this->files = $params;
+        return $this;
     }
 
     /**
@@ -307,21 +311,22 @@ class Frapi_Controller_Main
      * This method returns an array of the parameters
      * passed.
      *
-     * Is this similar to getRequest ? I have to check tmrw.
-     * @todo ^
      * @return Mixed An array or a string of parameters
      */
     public function getParams()
     {
-        $params = $this->request;
+        return $this->params;
+    }
 
-        /**
-         * This certainly isn't a pure approach however it is a very
-         * practical approach that will suit most people most of the times.
-         *
-         * Unhappy? Remove me.
-         */
-
+    /**
+     * parses the request and sets request parameters for later use
+     *
+     * @param array $params request params collected so far
+     * @return Frapi_Controller_Main
+     */
+    public function setParams(array $params)
+    {
+        // read the raw input to get the request body
         $input = file_get_contents("php://input");
         parse_str($input, $puts);
 
@@ -370,8 +375,9 @@ class Frapi_Controller_Main
             }
         }
 
-        $this->request = $params;
-        return $this->request;
+        // set the total request params; combines derived request params and parsed params
+        $this->params = $params;
+        return $this;
     }
 
     /**
@@ -385,8 +391,8 @@ class Frapi_Controller_Main
      */
     public function getParam($key)
     {
-        if (isset($this->request[$key])) {
-            return $this->request[$key];
+        if (isset($this->params[$key])) {
+            return $this->params[$key];
         }
 
         if (isset($this->files[$key])) {
@@ -453,13 +459,14 @@ class Frapi_Controller_Main
         $format = strtolower($format);
 
         if ($format) {
-            $typeValid = Frapi_Rules::validateOutputType($format);
+            $typeValid    = Frapi_Rules::validateOutputType($format);
             $this->format = $format;
         } else {
             throw new Frapi_Error (
                 Frapi_Error::ERROR_INVALID_URL_PROMPT_FORMAT_NAME,
                 Frapi_Error::ERROR_INVALID_URL_PROMPT_FORMAT_MSG,
-                Frapi_Error::ERROR_INVALID_URL_PROMPT_FORMAT_NO
+                Frapi_Error::ERROR_INVALID_URL_PROMPT_FORMAT_NO,
+                Frapi_Error::ERROR_INVALID_URL_PROMPT_FORMAT_HTTP_MSG
             );
         }
     }
@@ -512,9 +519,12 @@ class Frapi_Controller_Main
      */
     public function setInputFormat()
     {
-        $contentType = (isset($_SERVER['CONTENT_TYPE'])) ?
-                $_SERVER['CONTENT_TYPE'] :
-                null;
+        $contentType = null;
+        if (isset($_SERVER['CONTENT_TYPE'])) {
+            $matches = array();
+            preg_match('/^\s*(.*?)(?:(?:$|\s|;).*)/', $_SERVER['CONTENT_TYPE'], $matches);
+            $contentType = $matches[1];
+        }
 
         if(!empty($contentType) &&
            isset($this->mimeMaps[$contentType]) &&

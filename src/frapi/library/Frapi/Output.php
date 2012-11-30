@@ -106,7 +106,7 @@ class Frapi_Output
      **/
     public function sendHeaders($response)
     {
-        header('HTTP/1.1 '.intval($response->getStatusCode()));
+        header('HTTP/1.1 '.intval($response->getStatusCode()).' '.$response->getReasonPhrase());
 
         if ($response instanceof Frapi_Response) {
             $content_type = $response->getContentType();
@@ -207,6 +207,31 @@ class Frapi_Output
         Frapi_Internal::setCached('Output.mimeMaps', $map);
 
         return $map;
+    }
+
+    public static function getEnabledFormats()
+    {
+        try {
+            if ($formats = Frapi_Internal::getCached('Output.formats-enabled')) {
+                return $formats;
+            }
+
+            $cache   = new Frapi_Internal();
+            $outputs = $cache->getConfiguration('outputs')->getAll('output');
+
+            $formats = array();
+            foreach ($outputs as $output) {
+                if($output['enabled'] == 1) {
+                    $formats[] = strtolower($output['name']);
+                }
+            }
+        } catch (Exception $e) {
+            return false;
+        }
+
+        Frapi_Internal::setCached('Output.formats-enabled', $formats);
+
+        return $formats;
     }
 
     /**

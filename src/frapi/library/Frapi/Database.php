@@ -60,7 +60,8 @@ class Frapi_Database extends PDO
                 self::$instance[$name] = new PDO(
                     $dsn,
                     $configs['db_username'],
-                    $configs['db_password']
+                    $configs['db_password'],
+                    array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'utf8\'')
                 );
             }
         }
@@ -86,7 +87,8 @@ class Frapi_Database extends PDO
             throw new Frapi_Error(
                  'NO_DATABASE_DEFINED',
                  'No Database is defined in the configuration',
-                 500
+                 500,
+                 'Internal Server Error'
             );
         }
 
